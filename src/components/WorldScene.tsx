@@ -1,6 +1,6 @@
-import { Html, Line, MapControls } from '@react-three/drei';
+import { Html, Line, OrbitControls } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import countries50mData from '../data/ne_50m_countries.json';
 import land50mData from '../data/ne_50m_land.json';
@@ -10,7 +10,7 @@ import { GltfHuman } from './GltfHuman';
 import { Humanoid } from './Humanoid';
 import { RealisticGlobe } from './RealisticGlobe';
 import { GLOBE_RADIUS, lonLatToVector, simulationPointToLonLat, simulationPointToVector, surfaceQuaternion } from '../lib/globe';
-import type { AnatomyMode, NationState, NeutralTerritoryState, OverlayMode, SettlementState, Vec2, WorldState } from '../lib/types';
+import type { AnatomyMode, CivilianCohortState, NationState, NeutralTerritoryState, OverlayMode, SettlementState, Vec2, WorldState } from '../lib/types';
 
 type LonLat = [number, number];
 type PolygonCoordinates = LonLat[][];
@@ -37,18 +37,37 @@ export interface WorldSceneProps {
 
 function CameraRig({ world, selectedNationId }: Pick<WorldSceneProps, 'world' | 'selectedNationId'>) {
   const { camera, controls } = useThree();
+  const flyActive = useRef(true);
   const selected = world.nations.find((nation) => nation.id === selectedNationId) ?? world.nations[0];
   const focus = useMemo(() => simulationPointToVector(selected.territory.capital, 0.3), [selected.territory.capital]);
-  // Smoothly fly the camera in close to the selected nation so its cities and
-  // delegates become visible (zoom-to-country drilldown).
   const desired = useMemo(() => focus.clone().normalize().multiplyScalar(GLOBE_RADIUS + 3.2), [focus]);
+  const orbitTarget = useMemo(() => new THREE.Vector3(0, 0, 0), []);
+
+  useEffect(() => {
+    flyActive.current = true;
+  }, [selectedNationId]);
+
+  useEffect(() => {
+    const orbitControls = controls as { addEventListener?: (event: string, handler: () => void) => void; removeEventListener?: (event: string, handler: () => void) => void } | undefined;
+    const stopAutoFlight = () => {
+      flyActive.current = false;
+    };
+    orbitControls?.addEventListener?.('start', stopAutoFlight);
+    return () => orbitControls?.removeEventListener?.('start', stopAutoFlight);
+  }, [controls]);
+
+  // Fly to the selected country once, then yield to manual orbit controls.
   useFrame((_, delta) => {
+    if (!flyActive.current) return;
     const k = Math.min(1, delta * 1.8);
     camera.position.lerp(desired, k);
-    const mapControls = controls as { target?: THREE.Vector3; update?: () => void } | undefined;
-    if (mapControls?.target) {
-      mapControls.target.lerp(focus, k);
-      mapControls.update?.();
+    const orbitControls = controls as { target?: THREE.Vector3; update?: () => void } | undefined;
+    if (orbitControls?.target) {
+      orbitControls.target.lerp(orbitTarget, k);
+      orbitControls.update?.();
+    }
+    if (camera.position.distanceTo(desired) < 0.04 && (!orbitControls?.target || orbitControls.target.distanceTo(orbitTarget) < 0.04)) {
+      flyActive.current = false;
     }
   });
   return null;
@@ -400,6 +419,46 @@ function CivilizationLayer({ world, selectedNationId }: { world: WorldState; sel
   );
 }
 
+function cohortColor(cohort: CivilianCohortState, nation: NationState) {
+  if (cohort.purpose === 'displacement') return '#ff9f7a';
+  if (cohort.purpose === 'aid') return '#9fffe0';
+  if (cohort.purpose === 'trade') return '#ffd977';
+  if (cohort.purpose === 'migration') return nation.secondaryColor;
+  return '#f5e4c9';
+}
+
+function CivilianMobilityLayer({ world, selectedNationId }: { world: WorldState; selectedNationId: string }) {
+  return (
+    <>
+      {world.nations.flatMap((nation) => {
+        const selected = nation.id === selectedNationId;
+        const settlements = nation.settlements?.length ? nation.settlements : [fallbackSettlement(nation)];
+        const cohorts = (nation.civilianCohorts ?? []).slice(0, selected ? 8 : 3);
+        return cohorts.map((cohort) => {
+          const from = settlements.find((settlement) => settlement.id === cohort.fromSettlementId);
+          const to = settlements.find((settlement) => settlement.id === cohort.toSettlementId);
+          if (!from || !to) return null;
+          const start = simulationPointToVector(from.position, selected ? 0.34 : 0.3);
+          const end = simulationPointToVector(to.position, selected ? 0.34 : 0.3);
+          const mid = simulationPointToVector(cohort.position, selected ? 0.5 : 0.42);
+          const position = simulationPointToVector(cohort.position, selected ? 0.38 : 0.34);
+          const color = cohortColor(cohort, nation);
+          const scale = Math.min(0.08, 0.026 + Math.sqrt(cohort.representedPopulation) / 520000);
+          return (
+            <group key={`civilian-flow-${cohort.id}`}>
+              <Line points={[start, mid, end]} color={color} lineWidth={selected ? 1.2 : 0.75} transparent opacity={selected ? 0.5 : 0.26} />
+              <mesh position={position} quaternion={surfaceQuaternion(position)}>
+                <capsuleGeometry args={[scale * 0.38, scale, 4, 6]} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={cohort.stress > 55 ? 0.45 : 0.18} roughness={0.56} />
+              </mesh>
+            </group>
+          );
+        });
+      })}
+    </>
+  );
+}
+
 function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectNation }: WorldSceneProps) {
   const recentMessages = world.messages.slice(-4);
   return (
@@ -418,6 +477,7 @@ function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectN
       <NeutralSurface world={world} />
       <CityLayer world={world} selectedNationId={selectedNationId} />
       <CivilizationLayer world={world} selectedNationId={selectedNationId} />
+      <CivilianMobilityLayer world={world} selectedNationId={selectedNationId} />
       <PopulationLayer world={world} />
       <RealWorldCityLayer selectedNationId={selectedNationId} />
       <ResourceLayer world={world} />
@@ -462,15 +522,19 @@ function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectN
         );
       })}
 
-      <MapControls
+      <OrbitControls
         makeDefault
         enableDamping
+        enablePan={false}
+        enableRotate
         dampingFactor={0.08}
         minDistance={8.7}
         maxDistance={28}
         minPolarAngle={0.18}
         maxPolarAngle={Math.PI - 0.18}
-        target={simulationPointToVector((world.nations.find((nation) => nation.id === selectedNationId) ?? world.nations[0]).territory.capital, 0.3).toArray()}
+        rotateSpeed={0.65}
+        zoomSpeed={0.85}
+        target={[0, 0, 0]}
       />
     </>
   );

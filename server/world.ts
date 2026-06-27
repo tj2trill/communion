@@ -6,6 +6,8 @@ import type {
   CatastrophicForecast,
   CatastrophicReview,
   ChatMessage,
+  CivilianCohortState,
+  CivilianPurpose,
   DecisionRecord,
   DelegateState,
   EconomyState,
@@ -299,6 +301,46 @@ function createSettlements(nationId: string, area: NationState['territory'], pop
   });
 }
 
+function pointBetween(a: Vec2, b: Vec2, progress: number, sway = 0): Vec2 {
+  const clamped = Math.max(0, Math.min(1, progress));
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
+  const length = Math.max(0.001, Math.hypot(dx, dz));
+  const nx = -dz / length;
+  const nz = dx / length;
+  const arc = Math.sin(clamped * Math.PI) * sway;
+  return {
+    x: round(a.x + dx * clamped + nx * arc),
+    z: round(a.z + dz * clamped + nz * arc)
+  };
+}
+
+function cohortPurpose(index: number): CivilianPurpose {
+  return (['commute', 'trade', 'migration', 'aid'] as CivilianPurpose[])[index % 4];
+}
+
+function createCivilianCohorts(nationId: string, settlements: SettlementState[], population: number, index: number): CivilianCohortState[] {
+  const count = Math.min(8, Math.max(4, settlements.length + 2));
+  return Array.from({ length: count }, (_, cohortIndex) => {
+    const from = settlements[cohortIndex % settlements.length];
+    const to = settlements[(cohortIndex + 1 + (cohortIndex % 3)) % settlements.length];
+    const progress = round(((cohortIndex + 1) * 0.137 + index * 0.071) % 1);
+    const purpose = cohortPurpose(cohortIndex);
+    return {
+      id: `${nationId}-cohort-${cohortIndex}`,
+      nationId,
+      fromSettlementId: from.id,
+      toSettlementId: to.id,
+      position: pointBetween(from.position, to.position, progress, 0.18 + cohortIndex * 0.015),
+      progress,
+      representedPopulation: Math.max(250_000, Math.round(population / (420 + cohortIndex * 34))),
+      purpose,
+      speed: round(0.012 + (cohortIndex % 4) * 0.004 + (purpose === 'trade' ? 0.004 : 0), 4),
+      stress: 8 + cohortIndex * 2
+    };
+  });
+}
+
 function ensureNationCivilization(nation: NationState, index: number) {
   nation.resources ??= resourceStockpile(index);
   nation.settlements ??= createSettlements(nation.id, nation.territory, nation.social.population, index);
@@ -307,6 +349,20 @@ function ensureNationCivilization(nation: NationState, index: number) {
     settlement.resourceDemand ??= settlementResourceDemand(settlement.population, settlement.builtArea);
     settlement.resourceStockpiles ??= emptyResources();
     settlement.growthRate ??= 0;
+  }
+  nation.civilianCohorts = nation.civilianCohorts?.length ? nation.civilianCohorts : createCivilianCohorts(nation.id, nation.settlements, nation.social.population, index);
+  for (const cohort of nation.civilianCohorts) {
+    cohort.nationId = nation.id;
+    cohort.progress ??= 0;
+    cohort.representedPopulation = Math.max(0, cohort.representedPopulation ?? 0);
+    cohort.purpose ??= 'commute';
+    cohort.speed ??= 0.012;
+    cohort.stress ??= 10;
+    if (!nation.settlements.some((settlement) => settlement.id === cohort.fromSettlementId)) cohort.fromSettlementId = nation.settlements[0]?.id ?? '';
+    if (!nation.settlements.some((settlement) => settlement.id === cohort.toSettlementId)) cohort.toSettlementId = nation.settlements[1]?.id ?? nation.settlements[0]?.id ?? '';
+    const from = nation.settlements.find((settlement) => settlement.id === cohort.fromSettlementId);
+    const to = nation.settlements.find((settlement) => settlement.id === cohort.toSettlementId);
+    if (from && to) cohort.position = pointBetween(from.position, to.position, cohort.progress, 0.16);
   }
   rebalanceSettlementPopulation(nation);
 }
@@ -328,6 +384,7 @@ function createNation(index: number): NationState {
   const nationId = `nation-${['axiom', 'vesper', 'lumen', 'meridian'][index]}`;
   const population = [2_150_000_000, 2_050_000_000, 1_980_000_000, 1_920_000_000][index];
   const territoryState = territory(index);
+  const settlementStates = createSettlements(nationId, territoryState, population, index);
   const flags: Array<NationState['flag']> = [
     { pattern: 'cross', primary: '#0b3142', secondary: '#58c7ff', emblem: 'A' },
     { pattern: 'diagonal', primary: '#3a2617', secondary: '#ff9f45', emblem: 'V' },
@@ -353,7 +410,8 @@ function createNation(index: number): NationState {
     governmentForm: ['Council republic', 'Parliamentary union', 'Commonwealth assembly', 'Federal assembly'][index],
     territory: territoryState,
     resources: resourceStockpile(index),
-    settlements: createSettlements(nationId, territoryState, population, index),
+    settlements: settlementStates,
+    civilianCohorts: createCivilianCohorts(nationId, settlementStates, population, index),
     institutions: institutions(nationId),
     economy: economy(index, population),
     social: {
@@ -775,6 +833,10 @@ export function applyScenario(world: WorldState, scenarioId: string): WorldState
       nation.resources.trees = round(Math.max(0, nation.resources.trees * 0.92));
       nation.resources.water = round(Math.max(0, nation.resources.water * 0.88));
       nation.resources.sand = round(Math.max(0, nation.resources.sand * 0.96));
+      for (const cohort of nation.civilianCohorts) {
+        cohort.stress = round(clamp(cohort.stress + 7));
+        if (cohort.purpose === 'commute') cohort.purpose = 'migration';
+      }
       nation.economy.energySecurity = round(clamp(nation.economy.energySecurity - 14));
       nation.economy.foodSecurity = round(clamp(nation.economy.foodSecurity - 11));
       nation.social.environment = round(clamp(nation.social.environment - 6));
@@ -877,6 +939,12 @@ function frontierConflict(world: WorldState, challenger: NationState, controller
   controller.security.warWeariness = clamp(controller.security.warWeariness + 8);
   challenger.social.displacement += Math.round(harm * 1.9);
   controller.social.displacement += Math.round(harm * 2.2);
+  for (const nation of [challenger, controller]) {
+    for (const cohort of nation.civilianCohorts.slice(0, 3)) {
+      cohort.purpose = 'displacement';
+      cohort.stress = round(clamp(cohort.stress + war.intensity / 9));
+    }
+  }
   const relation = relationBetween(world, challenger.id, controller.id);
   if (relation) {
     relation.atWar = true;
@@ -1052,6 +1120,10 @@ function applyAction(world: WorldState, delegate: DelegateState, action: AgentAc
     target.social.health = clamp(target.social.health + 4);
     target.economy.foodSecurity = clamp(target.economy.foodSecurity + 5);
     target.social.displacement = Math.max(0, round(target.social.displacement - amount * 800));
+    for (const cohort of target.civilianCohorts) {
+      cohort.stress = round(clamp(cohort.stress - amount * 0.08));
+      if (cohort.purpose === 'displacement' && cohort.stress < 45) cohort.purpose = 'aid';
+    }
     addDecision(world, delegate.id, 'humanitarian_aid', 'Humanitarian aid transfer', `${nation.name} sent aid to ${target.name}.`, ['Food security and health improved for the recipient.'], true, 'important');
   } else if (action.type === 'propose_policy') {
     const proposal: ProposalState = {
@@ -1186,6 +1258,41 @@ function evolveNationCivilization(nation: NationState, intensity = 1) {
   rebalanceSettlementPopulation(nation);
 }
 
+function retargetCivilianCohort(nation: NationState, cohort: CivilianCohortState, pulseIndex: number) {
+  if (nation.settlements.length < 2) return;
+  const currentTargetIndex = Math.max(0, nation.settlements.findIndex((settlement) => settlement.id === cohort.toSettlementId));
+  const nextOffset = 1 + ((pulseIndex + cohort.id.length) % Math.max(1, nation.settlements.length - 1));
+  const nextTarget = nation.settlements[(currentTargetIndex + nextOffset) % nation.settlements.length];
+  cohort.fromSettlementId = cohort.toSettlementId || nation.settlements[0].id;
+  cohort.toSettlementId = nextTarget.id;
+  cohort.progress = 0;
+}
+
+function evolveCivilianMobility(nation: NationState, activeWars: number, pulseIndex: number, intensity = 1) {
+  const displacementShare = nation.social.displacement / Math.max(1, nation.social.population);
+  const resourceStrain = Math.max(0, 70 - nation.economy.foodSecurity) * 0.18 + Math.max(0, 65 - nation.social.stability) * 0.12;
+  const infrastructureSpeed = Math.max(0.45, nation.social.infrastructure / 85);
+  const warStress = activeWars > 0 ? 14 + nation.security.warWeariness * 0.28 : 0;
+  for (const cohort of nation.civilianCohorts) {
+    const from = nation.settlements.find((settlement) => settlement.id === cohort.fromSettlementId) ?? nation.settlements[0];
+    const to = nation.settlements.find((settlement) => settlement.id === cohort.toSettlementId) ?? nation.settlements[1] ?? from;
+    if (!from || !to) continue;
+    const pressurePurpose: CivilianPurpose = displacementShare > 0.018 || activeWars > 0 ? 'displacement' : resourceStrain > 4 && cohort.purpose === 'commute' ? 'migration' : cohort.purpose;
+    cohort.purpose = pressurePurpose;
+    const purposeSpeed = cohort.purpose === 'displacement' ? 0.018 : cohort.purpose === 'trade' ? 0.014 : cohort.purpose === 'aid' ? 0.016 : 0.012;
+    cohort.speed = round(clamp(purposeSpeed * infrastructureSpeed, 0.004, 0.04), 4);
+    cohort.progress = round(cohort.progress + cohort.speed * intensity, 4);
+    if (cohort.progress >= 1) {
+      retargetCivilianCohort(nation, cohort, pulseIndex);
+    }
+    const routeFrom = nation.settlements.find((settlement) => settlement.id === cohort.fromSettlementId) ?? from;
+    const routeTo = nation.settlements.find((settlement) => settlement.id === cohort.toSettlementId) ?? to;
+    cohort.position = pointBetween(routeFrom.position, routeTo.position, cohort.progress, 0.18 + (cohort.id.length % 5) * 0.025);
+    cohort.representedPopulation = Math.max(100_000, Math.round(nation.social.population / (520 + cohort.id.length * 9)));
+    cohort.stress = round(clamp(cohort.stress + (resourceStrain + warStress - nation.social.health * 0.04) * 0.015 * intensity));
+  }
+}
+
 export function pulseWorld(world: WorldState, pulseIndex = world.turn + 1): WorldState {
   const focusDelegate = world.delegates[pulseIndex % Math.max(1, world.delegates.length)];
   for (const delegate of world.delegates) {
@@ -1218,6 +1325,7 @@ export function pulseWorld(world: WorldState, pulseIndex = world.turn + 1): Worl
     nation.social.stability = round(clamp(nation.social.stability + (nation.social.approval - 65) * 0.002 - nation.security.warWeariness * 0.001));
     nation.social.infrastructure = round(clamp(nation.social.infrastructure - world.stats.activeWars * 0.005 + 0.002));
     evolveNationCivilization(nation, 0.45);
+    evolveCivilianMobility(nation, world.stats.activeWars, pulseIndex, 1);
   }
   for (const territoryItem of world.neutralTerritories) {
     const claimPressure = territoryItem.claimantNationIds.length * 0.04;

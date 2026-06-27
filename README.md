@@ -17,6 +17,7 @@ The application combines a live 3D globe dashboard with a stateful simulation se
 - Political, economic-growth, gold, diplomacy, and conflict overlays.
 - Capital skylines, detailed terrain resources, civilian population markers, territorial labels, relationship arcs, conflict indicators, and live camera controls that zoom into a selected country.
 - Persistent settlements for each nation, including capital, metro, industrial, agrarian, and frontier districts with population, construction, housing, industry, services, infrastructure, and resource demand.
+- Aggregate civilian cohorts move between settlements for commuting, trade, migration, aid, and displacement, with stress rising under conflict or resource shocks.
 
 ### Multi-model deliberation
 

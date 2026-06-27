@@ -8,6 +8,7 @@ import {
   createInitialWorld,
   issueFiat,
   pulseWorld,
+  recomputeWorld,
   sellSovereignGold,
   settleTrade,
   stepWorld,
@@ -44,13 +45,26 @@ test('initial nations have persistent settlements and resource stockpiles', () =
   const world = createInitialWorld();
   for (const nation of world.nations) {
     assert.equal(nation.settlements.length, 5);
+    assert.ok(nation.civilianCohorts.length >= 4);
     assert.ok(nation.settlements.some((settlement) => settlement.kind === 'capital'));
     assert.ok(nation.settlements.every((settlement) => settlement.population > 1_000_000));
     assert.ok(nation.settlements.every((settlement) => settlement.resourceDemand.water > 0));
+    assert.ok(nation.civilianCohorts.every((cohort) => cohort.representedPopulation > 0));
+    assert.ok(nation.civilianCohorts.every((cohort) => cohort.fromSettlementId !== cohort.toSettlementId));
     assert.ok(nation.resources.trees > 0);
     assert.ok(nation.resources.stone > 0);
     assert.ok(nation.resources.water > 0);
   }
+});
+
+test('recompute backfills civilian cohorts for restored worlds', () => {
+  const world = createInitialWorld();
+  for (const nation of world.nations) {
+    delete (nation as { civilianCohorts?: unknown }).civilianCohorts;
+  }
+  recomputeWorld(world);
+  assert.equal(world.nations.every((nation) => nation.civilianCohorts.length >= 4), true);
+  assert.equal(validateGoldConservation(world), true);
 });
 
 test('fiat issuance expands money and changes macro indicators without creating gold', () => {
@@ -134,6 +148,7 @@ test('ambient pulses move the world without creating audit events or gold', () =
   const targetsBefore = world.delegates.map((delegate) => `${delegate.target.x}:${delegate.target.z}`).join('|');
   const builtAreaBefore = world.nations[0].settlements[0].builtArea;
   const resourceBefore = world.nations[0].resources.stone;
+  const cohortBefore = { ...world.nations[0].civilianCohorts[0].position };
   pulseWorld(world, 11);
   assert.equal(world.turn, eventBefore);
   assert.equal(totalGold(world), 6400);
@@ -141,6 +156,16 @@ test('ambient pulses move the world without creating audit events or gold', () =
   assert.notEqual(world.delegates.map((delegate) => `${delegate.target.x}:${delegate.target.z}`).join('|'), targetsBefore);
   assert.ok(world.nations[0].settlements[0].builtArea >= builtAreaBefore);
   assert.notEqual(world.nations[0].resources.stone, resourceBefore);
+  assert.notDeepEqual(world.nations[0].civilianCohorts[0].position, cohortBefore);
+});
+
+test('civilian cohorts react to resource shocks', () => {
+  const world = createInitialWorld();
+  const before = world.nations.map((nation) => nation.civilianCohorts[0].stress);
+  applyScenario(world, 'resource-shock');
+  assert.equal(totalGold(world), 6400);
+  assert.ok(world.nations.every((nation, index) => nation.civilianCohorts[0].stress > before[index]));
+  assert.ok(world.nations.some((nation) => nation.civilianCohorts.some((cohort) => cohort.purpose === 'migration')));
 });
 
 test('live mode blocks missing provider credentials instead of faking a model action', async () => {

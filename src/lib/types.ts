@@ -186,6 +186,21 @@ export interface SettlementState {
   growthRate: number;
 }
 
+export type CivilianPurpose = 'commute' | 'trade' | 'migration' | 'aid' | 'displacement';
+
+export interface CivilianCohortState {
+  id: string;
+  nationId: string;
+  fromSettlementId: string;
+  toSettlementId: string;
+  position: Vec2;
+  progress: number;
+  representedPopulation: number;
+  purpose: CivilianPurpose;
+  speed: number;
+  stress: number;
+}
+
 export interface NeutralTerritoryState {
   id: string;
   name: string;
@@ -222,6 +237,7 @@ export interface NationState {
   territory: TerritoryState;
   resources: ResourceState;
   settlements: SettlementState[];
+  civilianCohorts: CivilianCohortState[];
   institutions: InstitutionState[];
   economy: EconomyState;
   social: SocialState;
