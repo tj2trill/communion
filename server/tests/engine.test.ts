@@ -167,6 +167,48 @@ test('live scheduler surfaces every missing provider without round robin turns',
   }
 });
 
+test('live flow frame can resolve multiple delegates concurrently', async () => {
+  const previousMode = process.env.COMMUNION_MODE;
+  const previousWidth = process.env.FLOW_ACTORS_PER_TICK;
+  try {
+    process.env.COMMUNION_MODE = 'live';
+    process.env.FLOW_ACTORS_PER_TICK = '4';
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.XAI_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    const world = createInitialWorld();
+    await stepWorldWithProviders(world);
+    assert.equal(world.turn, 4);
+    assert.equal(world.delegates.every((delegate) => delegate.turnCount === 1), true);
+    assert.equal(world.delegates.every((delegate) => delegate.lastProviderSource === 'blocked'), true);
+    assert.equal(new Set(world.messages.slice(-4).map((message) => message.fromDelegateId)).size, 4);
+    assert.equal(validateGoldConservation(world), true);
+  } finally {
+    process.env.COMMUNION_MODE = previousMode;
+    if (previousWidth === undefined) delete process.env.FLOW_ACTORS_PER_TICK;
+    else process.env.FLOW_ACTORS_PER_TICK = previousWidth;
+  }
+});
+
+test('mock provider stepping remains single delegate by default', async () => {
+  const previousMode = process.env.COMMUNION_MODE;
+  const previousWidth = process.env.FLOW_ACTORS_PER_TICK;
+  try {
+    process.env.COMMUNION_MODE = 'mock';
+    delete process.env.FLOW_ACTORS_PER_TICK;
+    const world = createInitialWorld();
+    await stepWorldWithProviders(world);
+    assert.equal(world.turn, 1);
+    assert.equal(world.delegates.filter((delegate) => delegate.turnCount > 0).length, 1);
+    assert.equal(validateGoldConservation(world), true);
+  } finally {
+    process.env.COMMUNION_MODE = previousMode;
+    if (previousWidth === undefined) delete process.env.FLOW_ACTORS_PER_TICK;
+    else process.env.FLOW_ACTORS_PER_TICK = previousWidth;
+  }
+});
+
 test('deterministic stepping advances delegates and maintains invariants', () => {
   process.env.COMMUNION_MODE = 'mock';
   const world = createInitialWorld();

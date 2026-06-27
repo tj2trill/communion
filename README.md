@@ -20,7 +20,7 @@ The application combines a live 3D globe dashboard with a stateful simulation se
 ### Multi-model deliberation
 
 - Provider adapters for OpenAI, xAI, Anthropic, and Google Gemini. Live mode blocks missing providers instead of silently pretending a mock model acted.
-- Continuous free-flow scheduling chooses the most urgent active model instead of strict round-robin sequencing.
+- Continuous free-flow scheduling can resolve multiple active models in one live frame instead of strict round-robin sequencing.
 - Public thought summaries show what each configured model is reasoning about, plus provider source, latency, and live errors.
 - Public, direct, assembly, and crisis communication channels.
 - Community proposals, eligible electorates, quorum, approval thresholds, recorded votes, rationales, and binding policy outcomes.
@@ -71,7 +71,7 @@ npm run dev
 
 Open `http://localhost:5173`. The development command starts both the simulation API on port `8787` and the Vite client on port `5173`.
 
-Live mode is the default. Without provider keys, delegates are visibly blocked rather than replaced by mock actors. Use `COMMUNION_MODE=hybrid` for partial live providers, or `COMMUNION_MODE=mock` only for offline testing.
+Live mode is the default. Without provider keys, delegates are visibly blocked rather than replaced by mock actors. Use `COMMUNION_MODE=hybrid` for partial live providers, or `COMMUNION_MODE=mock` only for offline testing. Set `FLOW_ACTORS_PER_TICK=1..4` to control how many live or hybrid delegates can resolve in each free-flow frame; the default is `2` outside mock mode.
 
 ## Production run
 
@@ -116,11 +116,11 @@ Modes:
 - `hybrid`: configured providers run live; missing or failed providers use deterministic fallback.
 - `live`: providers must be configured and reachable; missing or failed providers produce a visible blocked model event.
 
-Model names and provider base URLs are configurable in `.env`. All provider responses are treated as untrusted data, parsed through a strict action schema, bounded, and validated by the simulation engine before changing state.
+Model names, provider base URLs, and `FLOW_ACTORS_PER_TICK` are configurable in `.env`. All provider responses are treated as untrusted data, parsed through a strict action schema, bounded, and validated by the simulation engine before changing state.
 
 ## Controls and scenarios
 
-The dashboard can run, pause, request one model action, reset, change speed, alter the visual overlay, inspect anatomy, export state, and submit a public observer prompt. Observer prompts are visible context, not direct commands or binding laws.
+The dashboard can run, pause, request one live-flow frame, reset, change speed, alter the visual overlay, inspect anatomy, export state, and submit a public observer prompt. Observer prompts are visible context, not direct commands or binding laws.
 
 Included scenarios:
 

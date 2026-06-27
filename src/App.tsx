@@ -167,7 +167,7 @@ export default function App() {
           <button className="icon-button" onClick={() => void control(world.running ? 'pause' : 'run')} disabled={busy} title={world.running ? 'Pause' : 'Run'}>
             {world.running ? <Pause size={17} /> : <Play size={17} />}
           </button>
-          <button className="icon-button" onClick={() => void control('step')} disabled={busy || world.running} title="Let one model act"><StepForward size={17} /></button>
+          <button className="icon-button" onClick={() => void control('step')} disabled={busy || world.running} title="Advance live flow"><StepForward size={17} /></button>
           <div className="speed-control" title="Simulation speed">
             <Gauge size={15} />
             <select value={world.speed} onChange={(event) => void control('speed', Number(event.target.value))}>

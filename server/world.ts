@@ -1051,33 +1051,48 @@ function activeDelegate(world: WorldState): DelegateState {
   return world.delegates.find((item) => item.id === world.currentDelegateId) ?? world.delegates[0];
 }
 
-function selectAutonomousDelegate(world: WorldState): DelegateState {
-  const nowMs = Date.now();
+function flowActorsPerFrame(world: WorldState): number {
+  const raw = process.env.FLOW_ACTORS_PER_TICK ?? process.env.LIVE_FLOW_WIDTH;
+  const parsed = raw ? Number(raw) : world.mode === 'mock' ? 1 : 2;
+  const width = Number.isFinite(parsed) ? Math.floor(parsed) : world.mode === 'mock' ? 1 : 2;
+  return Math.max(1, Math.min(world.delegates.length, width));
+}
+
+function autonomousCandidates(world: WorldState): DelegateState[] {
   const hasLiveProvider = world.delegates.some((delegate) => providerConfigured(delegate.provider));
-  const candidates = world.mode === 'live' && hasLiveProvider
-    ? world.delegates.filter((delegate) => providerConfigured(delegate.provider))
-    : world.delegates;
-  const minActions = Math.min(...candidates.map((delegate) => delegate.turnCount));
-  const activePool = candidates.filter((delegate) => delegate.turnCount === minActions);
-  return activePool
+  if (world.mode === 'live' && hasLiveProvider) {
+    return world.delegates.filter((delegate) => providerConfigured(delegate.provider));
+  }
+  return world.delegates;
+}
+
+function autonomousPressure(world: WorldState, delegate: DelegateState, index: number, nowMs: number): number {
+  const nation = getNation(world, delegate.nationId);
+  const openWar = world.wars.some((war) => war.status === 'active' && (war.attackers.includes(nation.id) || war.defenders.includes(nation.id)));
+  const unresolvedFrontier = world.neutralTerritories.some((territoryItem) => territoryItem.claimantNationIds.includes(nation.id) && territoryItem.controllingNationId !== nation.id);
+  const providerBias = providerConfigured(delegate.provider) ? 8 : world.mode === 'hybrid' ? 2 : -12;
+  const pressure =
+    delegate.affect.arousal * 0.24 +
+    delegate.affect.resolve * 0.18 +
+    (100 - nation.social.stability) * 0.16 +
+    nation.economy.fiat.inflation * 1.6 +
+    nation.security.warWeariness * 0.45 +
+    (openWar ? 22 : 0) +
+    (unresolvedFrontier ? 10 : 0) +
+    providerBias;
+  return pressure + Math.sin(nowMs / 870 + index * 2.17 + world.seed * 0.01) * 9;
+}
+
+function selectAutonomousDelegates(world: WorldState, count: number): DelegateState[] {
+  const nowMs = Date.now();
+  const candidates = autonomousCandidates(world);
+  return candidates
     .map((delegate, index) => {
-      const nation = getNation(world, delegate.nationId);
-      const openWar = world.wars.some((war) => war.status === 'active' && (war.attackers.includes(nation.id) || war.defenders.includes(nation.id)));
-      const unresolvedFrontier = world.neutralTerritories.some((territoryItem) => territoryItem.claimantNationIds.includes(nation.id) && territoryItem.controllingNationId !== nation.id);
-      const providerBias = providerConfigured(delegate.provider) ? 8 : world.mode === 'hybrid' ? 2 : -12;
-      const pressure =
-        delegate.affect.arousal * 0.24 +
-        delegate.affect.resolve * 0.18 +
-        (100 - nation.social.stability) * 0.16 +
-        nation.economy.fiat.inflation * 1.6 +
-        nation.security.warWeariness * 0.45 +
-        (openWar ? 22 : 0) +
-        (unresolvedFrontier ? 10 : 0) +
-        providerBias;
-      const driftValue = Math.sin(nowMs / 870 + index * 2.17 + world.seed * 0.01) * 9;
-      return { delegate, score: pressure + driftValue };
+      return { delegate, score: autonomousPressure(world, delegate, index, nowMs) };
     })
-    .sort((a, b) => b.score - a.score)[0]?.delegate ?? activeDelegate(world);
+    .sort((a, b) => a.delegate.turnCount - b.delegate.turnCount || b.score - a.score)
+    .slice(0, count)
+    .map((item) => item.delegate);
 }
 
 function deterministicTurn(world: WorldState, delegate: DelegateState, source: DelegateState['lastProviderSource'] = 'mock', error?: string): ResolvedTurn {
@@ -1149,9 +1164,19 @@ export function stepWorld(world: WorldState): WorldState {
 }
 
 export async function stepWorldWithProviders(world: WorldState): Promise<WorldState> {
-  const delegate = world.mode === 'mock' ? activeDelegate(world) : selectAutonomousDelegate(world);
-  world.currentDelegateId = delegate.id;
-  return commitTurn(world, delegate, await providerTurn(world, delegate), world.mode === 'mock' ? 'sequential' : 'free-flow');
+  const delegates = world.mode === 'mock' ? [activeDelegate(world)] : selectAutonomousDelegates(world, flowActorsPerFrame(world));
+  const snapshot = structuredClone(world) as WorldState;
+  const resolved = await Promise.all(delegates.map(async (delegate) => {
+    const snapshotDelegate = snapshot.delegates.find((item) => item.id === delegate.id) ?? delegate;
+    return { delegateId: delegate.id, turn: await providerTurn(snapshot, snapshotDelegate) };
+  }));
+  for (const item of resolved) {
+    const delegate = world.delegates.find((candidate) => candidate.id === item.delegateId);
+    if (!delegate) continue;
+    world.currentDelegateId = delegate.id;
+    commitTurn(world, delegate, item.turn, world.mode === 'mock' ? 'sequential' : 'free-flow');
+  }
+  return recomputeWorld(world);
 }
 
 function speechFor(world: WorldState, delegate: DelegateState, action: AgentActionPayload): string {
