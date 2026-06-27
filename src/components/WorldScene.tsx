@@ -1,17 +1,19 @@
 import { Html, Line, MapControls } from '@react-three/drei';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
+import { Suspense, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import countriesData from '../data/ne_110m_countries.json';
-import landData from '../data/ne_110m_land.json';
+import populatedPlacesData from '../data/ne_110m_populated_places.json';
 import { Flag } from './Flag';
 import { Humanoid } from './Humanoid';
+import { RealisticGlobe } from './RealisticGlobe';
 import { GLOBE_RADIUS, lonLatToVector, simulationPointToLonLat, simulationPointToVector, surfaceQuaternion } from '../lib/globe';
 import type { AnatomyMode, NeutralTerritoryState, OverlayMode, Vec2, WorldState } from '../lib/types';
 
-type Ring = Array<[number, number]>;
-type GeoFeature = { geometry?: { type: string; coordinates: unknown } };
-type FeatureCollection = { features: GeoFeature[] };
+type PopulatedPlaceFeature = {
+  geometry?: { type: string; coordinates: [number, number] };
+  properties?: { name?: string; nameascii?: string; pop_max?: number; adm0name?: string };
+};
+type PopulatedPlacesCollection = { features: PopulatedPlaceFeature[] };
 
 export interface WorldSceneProps {
   world: WorldState;
@@ -19,69 +21,6 @@ export interface WorldSceneProps {
   overlay: OverlayMode;
   selectedNationId: string;
   onSelectNation: (nationId: string) => void;
-}
-
-function ringsFromGeometry(geometry: GeoFeature['geometry']): Ring[] {
-  if (!geometry) return [];
-  if (geometry.type === 'Polygon') return (geometry.coordinates as Ring[][]).map((polygon) => polygon[0]);
-  if (geometry.type === 'MultiPolygon') return (geometry.coordinates as Ring[][][]).flatMap((polygon) => polygon.map((ring) => ring));
-  return [];
-}
-
-function ringToTexturePath(context: CanvasRenderingContext2D, ring: Ring, width: number, height: number) {
-  ring.forEach(([lon, lat], index) => {
-    const x = ((lon + 180) / 360) * width;
-    const y = ((90 - lat) / 180) * height;
-    if (index === 0) context.moveTo(x, y);
-    else context.lineTo(x, y);
-  });
-}
-
-function makeEarthTexture() {
-  const width = 2048;
-  const height = 1024;
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext('2d')!;
-  const ocean = context.createLinearGradient(0, 0, 0, height);
-  ocean.addColorStop(0, '#0b3157');
-  ocean.addColorStop(0.48, '#0a6578');
-  ocean.addColorStop(1, '#082847');
-  context.fillStyle = ocean;
-  context.fillRect(0, 0, width, height);
-
-  context.save();
-  context.shadowColor = 'rgba(108, 211, 196, 0.24)';
-  context.shadowBlur = 8;
-  context.fillStyle = '#2f784b';
-  context.strokeStyle = '#7fb783';
-  context.lineWidth = 1.1;
-  for (const feature of (landData as FeatureCollection).features) {
-    for (const ring of ringsFromGeometry(feature.geometry)) {
-      context.beginPath();
-      ringToTexturePath(context, ring, width, height);
-      context.closePath();
-      context.fill();
-      context.stroke();
-    }
-  }
-  context.restore();
-
-  context.strokeStyle = 'rgba(223, 234, 214, 0.3)';
-  context.lineWidth = 0.65;
-  for (const feature of (countriesData as FeatureCollection).features) {
-    for (const ring of ringsFromGeometry(feature.geometry)) {
-      context.beginPath();
-      ringToTexturePath(context, ring, width, height);
-      context.stroke();
-    }
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 8;
-  return texture;
 }
 
 function CameraRig({ world, selectedNationId }: Pick<WorldSceneProps, 'world' | 'selectedNationId'>) {
@@ -99,36 +38,6 @@ function CameraRig({ world, selectedNationId }: Pick<WorldSceneProps, 'world' | 
     }
   }, [camera, controls, focus]);
   return null;
-}
-
-function Globe({ overlay }: { overlay: OverlayMode }) {
-  const globe = useRef<THREE.Mesh>(null);
-  const texture = useMemo(() => makeEarthTexture(), []);
-  useFrame(({ clock }) => {
-    if (globe.current) globe.current.rotation.y = Math.sin(clock.elapsedTime * 0.08) * 0.035;
-  });
-  return (
-    <group>
-      <mesh ref={globe} castShadow receiveShadow>
-        <sphereGeometry args={[GLOBE_RADIUS, 128, 96]} />
-        <meshStandardMaterial
-          map={texture}
-          roughness={0.68}
-          metalness={0.02}
-          emissive={overlay === 'conflict' ? '#201018' : '#061016'}
-          emissiveIntensity={overlay === 'conflict' ? 0.18 : 0.04}
-        />
-      </mesh>
-      <mesh>
-        <sphereGeometry args={[GLOBE_RADIUS + 0.025, 128, 96]} />
-        <meshBasicMaterial color="#7ee8ff" transparent opacity={0.045} side={THREE.BackSide} />
-      </mesh>
-      <mesh>
-        <sphereGeometry args={[GLOBE_RADIUS + 0.55, 128, 96]} />
-        <meshBasicMaterial color="#62d7ff" transparent opacity={0.055} side={THREE.BackSide} />
-      </mesh>
-    </group>
-  );
 }
 
 function surfaceLine(points: Vec2[], altitude = 0.08) {
@@ -217,6 +126,49 @@ function PopulationLayer({ world }: { world: WorldState }) {
             </mesh>
           );
         });
+      })}
+    </>
+  );
+}
+
+function RealWorldCityLayer({ selectedNationId }: { selectedNationId: string }) {
+  const places = useMemo(() => {
+    return (populatedPlacesData as unknown as PopulatedPlacesCollection).features
+      .filter((feature) => feature.geometry?.type === 'Point')
+      .map((feature) => {
+        const [lon, lat] = feature.geometry!.coordinates;
+        const population = feature.properties?.pop_max ?? 0;
+        return {
+          lon,
+          lat,
+          population,
+          name: feature.properties?.nameascii ?? feature.properties?.name ?? 'City'
+        };
+      })
+      .sort((a, b) => b.population - a.population)
+      .slice(0, 170);
+  }, []);
+  const selectedTint = selectedNationId.length % 2 === 0 ? '#9fe8ff' : '#ffe08a';
+  return (
+    <>
+      {places.map((place, index) => {
+        const height = 0.045 + Math.min(0.22, Math.sqrt(Math.max(1, place.population)) / 32000);
+        const radius = 0.012 + Math.min(0.026, Math.sqrt(Math.max(1, place.population)) / 150000);
+        const position = lonLatToVector(place.lon, place.lat, GLOBE_RADIUS + 0.08);
+        return (
+          <group key={`${place.name}-${index}`} position={position} quaternion={surfaceQuaternion(position)}>
+            <mesh position={[0, height / 2, 0]}>
+              <cylinderGeometry args={[radius, radius * 0.72, height, 8]} />
+              <meshStandardMaterial color="#dbe7e9" emissive={selectedTint} emissiveIntensity={0.32} roughness={0.42} metalness={0.18} />
+            </mesh>
+            {index < 34 && (
+              <mesh rotation={[Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[radius * 1.6, radius * 2.2, 14]} />
+                <meshBasicMaterial color={selectedTint} transparent opacity={0.32} side={THREE.DoubleSide} toneMapped={false} />
+              </mesh>
+            )}
+          </group>
+        );
       })}
     </>
   );
@@ -360,12 +312,13 @@ function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectN
       <directionalLight position={[-10, 8, 9]} intensity={2.6} castShadow shadow-mapSize={[2048, 2048]} />
       <pointLight position={[8, 6, -8]} intensity={18} distance={34} color="#6bd8ff" />
 
-      <Globe overlay={overlay} />
+      <RealisticGlobe overlay={overlay} />
       <NationSurface world={world} selectedNationId={selectedNationId} onSelectNation={onSelectNation} />
       <NeutralSurface world={world} />
       <CityLayer world={world} selectedNationId={selectedNationId} />
       <CivilizationLayer world={world} selectedNationId={selectedNationId} />
       <PopulationLayer world={world} />
+      <RealWorldCityLayer selectedNationId={selectedNationId} />
       <ResourceLayer world={world} />
       {recentMessages.map((message, index) => {
         const fromDelegate = world.delegates.find((delegate) => delegate.id === message.fromDelegateId);

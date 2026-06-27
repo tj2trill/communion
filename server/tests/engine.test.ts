@@ -10,6 +10,7 @@ import {
   sellSovereignGold,
   settleTrade,
   stepWorld,
+  stepWorldWithProviders,
   totalGold,
   validateGoldConservation
 } from '../world';
@@ -112,7 +113,28 @@ test('observer prompts are logged but do not directly command state', () => {
   assert.ok(world.messages.at(-1)?.content.includes('Observer prompt received'));
 });
 
+test('live mode blocks missing provider credentials instead of faking a model action', async () => {
+  const previousMode = process.env.COMMUNION_MODE;
+  try {
+    process.env.COMMUNION_MODE = 'live';
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.XAI_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    const world = createInitialWorld();
+    await stepWorldWithProviders(world);
+    const active = world.delegates.find((delegate) => delegate.lastProviderSource === 'blocked' && delegate.turnCount > 0);
+    assert.ok(active);
+    assert.equal(active.lastActionType, 'observe');
+    assert.match(active.currentThought, /blocked/i);
+    assert.equal(validateGoldConservation(world), true);
+  } finally {
+    process.env.COMMUNION_MODE = previousMode;
+  }
+});
+
 test('deterministic stepping advances delegates and maintains invariants', () => {
+  process.env.COMMUNION_MODE = 'mock';
   const world = createInitialWorld();
   for (let i = 0; i < 8; i += 1) {
     stepWorld(world);

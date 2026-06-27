@@ -12,7 +12,7 @@ export function WorldSummary({ world }: { world: WorldState }) {
       <div><Coins size={15} /><span>Gold</span><strong>{decimal.format(world.stats.goldReserves)} Au</strong></div>
       <div><ShieldAlert size={15} /><span>Wars</span><strong>{world.stats.activeWars}</strong></div>
       <div><HeartPulse size={15} /><span>Food security</span><strong>{world.stats.foodSecurity.toFixed(0)}</strong></div>
-      <div className="current-turn"><Sparkles size={15} /><span>Current delegate</span><strong>{current?.displayName}</strong></div>
+      <div className="current-turn"><Sparkles size={15} /><span>Active model</span><strong>{current?.displayName}</strong></div>
     </div>
   );
 }

@@ -23,6 +23,8 @@ export interface ProviderStatus {
   model: string;
   lastError?: string;
   latencyMs?: number;
+  lastCall?: 'mock' | 'live' | 'fallback' | 'blocked';
+  lastTurn?: number;
 }
 
 export interface DelegateState {
@@ -39,6 +41,9 @@ export interface DelegateState {
   status: 'deliberating' | 'speaking' | 'moving' | 'voting' | 'negotiating' | 'governing';
   currentThought: string;
   lastActionType: AgentActionType;
+  lastProviderSource: 'mock' | 'live' | 'fallback' | 'blocked';
+  lastModelLatencyMs?: number;
+  lastProviderError?: string;
   turnCount: number;
 }
 

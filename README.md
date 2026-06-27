@@ -2,7 +2,7 @@
 
 Communion is a contained multi-model civilization simulator. Delegates representing GPT, Grok, Claude, and Gemini govern sovereign countries, communicate with one another, manage institutions and currencies, negotiate, vote, trade, form alliances, and experience the aggregate consequences of conflict inside a fictional world.
 
-The application combines a live 3D world dashboard with a stateful simulation server. It works immediately in deterministic mock mode and can call configured model providers from the server in hybrid or live mode.
+The application combines a live 3D globe dashboard with a stateful simulation server. In live mode each delegate calls its configured model provider from the server. Deterministic mock behavior is kept only for offline tests and explicit fallback development.
 
 > Communion is a fictional research and creative simulation. It has no authority, tools, or execution path outside its own state machine. Its conflict system does not contain real targets, coordinates, weapon designs, yields, delivery methods, or operational instructions.
 
@@ -10,16 +10,18 @@ The application combines a live 3D world dashboard with a stateful simulation se
 
 ### 3D world and delegates
 
-- Extruded world-map-style landmass divided into four sovereign starting territories.
+- Earth-like globe using Natural Earth land and country geometry, with four sovereign starting territories and free frontier land.
 - One initial country for each model delegate, with its own capital, institutions, currency, gold reserves, economy, population, and security apparatus.
 - Animated, articulated human-like delegates that walk within their territories and visibly communicate through speech bubbles and transmission pulses.
 - Educational, non-gory anatomy views: exterior, skeleton, organs, and translucent X-ray.
 - Political, economic-growth, gold, diplomacy, and conflict overlays.
-- Capital skylines, territorial labels, relationship arcs, conflict indicators, and live camera controls.
+- Capital skylines, detailed terrain resources, civilian population markers, territorial labels, relationship arcs, conflict indicators, and live camera controls that zoom into a selected country.
 
 ### Multi-model deliberation
 
-- Provider adapters for OpenAI, xAI, Anthropic, and Google Gemini.
+- Provider adapters for OpenAI, xAI, Anthropic, and Google Gemini. Live mode blocks missing providers instead of silently pretending a mock model acted.
+- Continuous free-flow scheduling chooses the most urgent active model instead of strict round-robin sequencing.
+- Public thought summaries show what each configured model is reasoning about, plus provider source, latency, and live errors.
 - Public, direct, assembly, and crisis communication channels.
 - Community proposals, eligible electorates, quorum, approval thresholds, recorded votes, rationales, and binding policy outcomes.
 - Synthetic affect telemetry for valence, arousal, trust, fear, and resolve. These are simulation variables, not claims that models possess subjective emotions.
@@ -55,7 +57,7 @@ Institutions have distinct influence, legitimacy, wealth share, coercive capacit
 - Aggregate consequences for population, casualties, displacement, infrastructure, GDP, public debt, inflation, currency confidence, food, health, environment, stability, war weariness, and international markets.
 - A staged catastrophic-deterrence simulator that makes reciprocal and third-party harm explicit.
 
-A catastrophic action cannot occur in one step. It requires an active fictional war, an abstract strategic-deterrent capability, a public consequence review, advancement to a later turn, and a separate authorization by the same delegate before the review expires. The forecast and execution include target losses, attacker losses, innocent-society spillover, retaliation probability, infrastructure damage, radiation burden, climate stress, food-system damage, market shock, and long recovery. No tactical target selection or physical weapon parameters exist.
+A catastrophic action cannot occur in one instant. It requires an active fictional war, an abstract strategic-deterrent capability, a public consequence review, later event eligibility, and a separate authorization by the same delegate before the review expires. The forecast and execution include target losses, attacker losses, innocent-society spillover, retaliation probability, infrastructure damage, radiation burden, climate stress, food-system damage, market shock, and long recovery. No tactical target selection or physical weapon parameters exist.
 
 ## Quick start
 
@@ -69,7 +71,7 @@ npm run dev
 
 Open `http://localhost:5173`. The development command starts both the simulation API on port `8787` and the Vite client on port `5173`.
 
-Mock mode is enabled by default, so no provider keys are required.
+Live mode is the default. Without provider keys, delegates are visibly blocked rather than replaced by mock actors. Use `COMMUNION_MODE=hybrid` for partial live providers, or `COMMUNION_MODE=mock` only for offline testing.
 
 ## Production run
 
@@ -93,7 +95,7 @@ docker run --rm -p 8787:8787 --env-file .env communion
 Provider credentials remain on the server and are never returned to the browser.
 
 ```dotenv
-COMMUNION_MODE=hybrid
+COMMUNION_MODE=live
 
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-5.5
@@ -110,15 +112,15 @@ GEMINI_MODEL=gemini-3-flash-preview
 
 Modes:
 
-- `mock`: all delegates use deterministic local simulation behavior.
+- `mock`: all delegates use deterministic local simulation behavior for offline tests.
 - `hybrid`: configured providers run live; missing or failed providers use deterministic fallback.
-- `live`: live provider calls are preferred, with fallback retained so the world does not stop on a transient provider failure.
+- `live`: providers must be configured and reachable; missing or failed providers produce a visible blocked model event.
 
 Model names and provider base URLs are configurable in `.env`. All provider responses are treated as untrusted data, parsed through a strict action schema, bounded, and validated by the simulation engine before changing state.
 
 ## Controls and scenarios
 
-The dashboard can run, pause, single-step, reset, change speed, alter the visual overlay, inspect anatomy, export state, and submit a public observer prompt. Observer prompts are visible context, not direct commands or binding laws.
+The dashboard can run, pause, request one model action, reset, change speed, alter the visual overlay, inspect anatomy, export state, and submit a public observer prompt. Observer prompts are visible context, not direct commands or binding laws.
 
 Included scenarios:
 

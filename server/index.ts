@@ -7,10 +7,10 @@ import type { HealthResponse, WorldState } from '../src/lib/types';
 import {
   addObserverPrompt,
   applyScenario,
-  controlWorld,
+  controlWorldAsync,
   createInitialWorld,
   providerStatuses,
-  stepWorld,
+  stepWorldWithProviders,
   validateGoldConservation
 } from './world';
 
@@ -71,7 +71,7 @@ app.get('/api/state', (_request, response) => {
 });
 
 app.get('/api/export', (_request, response) => {
-  response.setHeader('Content-Disposition', `attachment; filename="communion-world-turn-${world.turn}.json"`);
+  response.setHeader('Content-Disposition', `attachment; filename="communion-world-event-${world.turn}.json"`);
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
   response.send(JSON.stringify(world, null, 2));
 });
@@ -93,7 +93,7 @@ app.get('/api/stream', (request, response) => {
 app.post('/api/control', async (request, response) => {
   const parsed = controlSchema.safeParse(request.body);
   if (!parsed.success) return response.status(400).send(parsed.error.issues.map((issue) => issue.message).join('; '));
-  world = controlWorld(world, parsed.data.action, parsed.data.speed);
+  world = await controlWorldAsync(world, parsed.data.action, parsed.data.speed);
   await afterMutation(`control:${parsed.data.action}`);
   response.json({ ok: true, state: world });
 });
@@ -129,16 +129,27 @@ app.listen(port, () => {
   console.log(`Communion server listening on http://localhost:${port}`);
 });
 
+let flowInFlight = false;
+
 setInterval(() => {
   if (!world.running) return;
+  if (flowInFlight) return;
   tickCounter += world.speed;
   if (tickCounter < 1) return;
-  const steps = Math.min(4, Math.floor(tickCounter));
-  tickCounter -= steps;
-  for (let i = 0; i < steps; i += 1) {
-    world = stepWorld(world);
-  }
-  void afterMutation(`tick:${steps}`);
+  tickCounter = Math.max(0, tickCounter - 1);
+  flowInFlight = true;
+  void (async () => {
+    try {
+      world = await stepWorldWithProviders(world);
+      await afterMutation('flow');
+    } catch (reason) {
+      world.running = false;
+      await audit(`flow-error:${reason instanceof Error ? reason.message : String(reason)}`);
+      broadcast(world);
+    } finally {
+      flowInFlight = false;
+    }
+  })();
 }, tickMs);
 
 async function loadWorld(): Promise<WorldState> {

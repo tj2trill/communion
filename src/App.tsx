@@ -51,7 +51,7 @@ export default function App() {
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [leftTab, setLeftTab] = useState<LeftTab>('nations');
-  const [activityTab, setActivityTab] = useState<ActivityTab>('chat');
+  const [activityTab, setActivityTab] = useState<ActivityTab>('thoughts');
   const [anatomyMode, setAnatomyMode] = useState<AnatomyMode>('exterior');
   const [overlay, setOverlay] = useState<OverlayMode>('political');
   const [selectedNationId, setSelectedNationId] = useState('nation-axiom');
@@ -150,15 +150,15 @@ export default function App() {
 
         <div className="simulation-meta">
           <span className={`live-dot ${world.running ? 'running' : ''}`} />
-          <div><strong>{world.running ? 'SIMULATION RUNNING' : 'SIMULATION PAUSED'}</strong><small>YEAR {world.year} · DAY {world.day} · TURN {world.turn}</small></div>
+          <div><strong>{world.running ? 'LIVE AI FLOW ACTIVE' : 'LIVE AI FLOW PAUSED'}</strong><small>YEAR {world.year} · DAY {world.day} · EVENTS {world.turn}</small></div>
         </div>
 
         <div className="provider-strip">
           {world.providerStatus.map((provider) => (
-            <div className={`provider-pill ${provider.mode}`} key={provider.provider} title={provider.lastError || `${provider.model}${provider.latencyMs ? ` · ${provider.latencyMs}ms` : ''}`}>
+            <div className={`provider-pill ${provider.lastCall ?? provider.mode}`} key={provider.provider} title={provider.lastError || `${provider.model}${provider.latencyMs ? ` · ${provider.latencyMs}ms` : ''}`}>
               <span />
               <b>{provider.provider === 'google' ? 'GEMINI' : provider.provider.toUpperCase()}</b>
-              <small>{provider.mode}</small>
+              <small>{provider.lastCall ?? provider.mode}</small>
             </div>
           ))}
         </div>
@@ -167,7 +167,7 @@ export default function App() {
           <button className="icon-button" onClick={() => void control(world.running ? 'pause' : 'run')} disabled={busy} title={world.running ? 'Pause' : 'Run'}>
             {world.running ? <Pause size={17} /> : <Play size={17} />}
           </button>
-          <button className="icon-button" onClick={() => void control('step')} disabled={busy || world.running} title="Advance one delegate turn"><StepForward size={17} /></button>
+          <button className="icon-button" onClick={() => void control('step')} disabled={busy || world.running} title="Let one model act"><StepForward size={17} /></button>
           <div className="speed-control" title="Simulation speed">
             <Gauge size={15} />
             <select value={world.speed} onChange={(event) => void control('speed', Number(event.target.value))}>

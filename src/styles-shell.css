@@ -71,6 +71,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .provider-pill span { width: 5px; height: 5px; border-radius: 50%; background: #708188; }
 .provider-pill.live span { background: var(--green); box-shadow: 0 0 7px rgba(89, 213, 157, 0.6); }
 .provider-pill.fallback span { background: var(--orange); }
+.provider-pill.blocked span { background: var(--red); box-shadow: 0 0 7px rgba(236, 105, 99, 0.5); }
 .provider-pill b { font-size: 8px; letter-spacing: 0.08em; color: #bdcdd0; }
 .provider-pill small { font-size: 8px; color: #62767c; text-transform: uppercase; }
 
@@ -126,4 +127,3 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .world-summary strong { font-size: 10px; color: #d0dee0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .world-summary .current-turn { border-right: 0; }
 .world-summary .current-turn svg { color: var(--cyan); }
-

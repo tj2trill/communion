@@ -26,49 +26,27 @@ import type {
   WarState,
   WorldState
 } from '../src/lib/types';
+import {
+  callModelProvider,
+  envModel,
+  markProvider,
+  modeFromEnv,
+  providerConfigured,
+  providerStatuses,
+  PROVIDER_SPECS,
+  type ProviderTurn
+} from './providers';
+
+export { providerStatuses } from './providers';
 
 const FOUNDING_YEAR = 2042;
 const GLOBAL_GOLD_STOCK = 6400;
-const PROVIDERS: Array<{ provider: ProviderId; name: string; model: string; nation: string; color: string; secondary: string }> = [
-  { provider: 'openai', name: 'GPT Delegate', model: 'gpt-5.5', nation: 'Axiom Republic', color: '#58c7ff', secondary: '#d7f3ff' },
-  { provider: 'xai', name: 'Grok Delegate', model: 'grok-4', nation: 'Vesper Union', color: '#ff9f45', secondary: '#ffe0bd' },
-  { provider: 'anthropic', name: 'Claude Delegate', model: 'claude-sonnet-4-6', nation: 'Lumen Commonwealth', color: '#9bd66f', secondary: '#e6f7d9' },
-  { provider: 'google', name: 'Gemini Delegate', model: 'gemini-3-flash-preview', nation: 'Meridian Assembly', color: '#c493ff', secondary: '#f0ddff' }
-];
+const PROVIDERS = PROVIDER_SPECS;
 
 const clamp = (value: number, min = 0, max = 100) => Math.max(min, Math.min(max, value));
 const round = (value: number, places = 3) => Number(value.toFixed(places));
 const now = () => new Date().toISOString();
 const id = (prefix: string, turn: number, suffix = '') => `${prefix}-${turn}-${suffix || 'record'}`;
-
-function modeFromEnv(): SimulationMode {
-  const raw = process.env.COMMUNION_MODE;
-  return raw === 'hybrid' || raw === 'live' ? raw : 'mock';
-}
-
-function envModel(provider: ProviderId, fallback: string): string {
-  const key = provider === 'openai' ? 'OPENAI_MODEL' : provider === 'xai' ? 'XAI_MODEL' : provider === 'anthropic' ? 'ANTHROPIC_MODEL' : 'GEMINI_MODEL';
-  return process.env[key] || fallback;
-}
-
-function hasKey(provider: ProviderId): boolean {
-  const key = provider === 'openai' ? 'OPENAI_API_KEY' : provider === 'xai' ? 'XAI_API_KEY' : provider === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'GEMINI_API_KEY';
-  return Boolean(process.env[key]);
-}
-
-export function providerStatuses(mode = modeFromEnv()): ProviderStatus[] {
-  return PROVIDERS.map((item) => {
-    const configured = hasKey(item.provider);
-    return {
-      provider: item.provider,
-      configured,
-      mode: mode === 'mock' ? 'mock' : configured ? 'live' : 'fallback',
-      model: envModel(item.provider, item.model),
-      latencyMs: configured ? 420 : 0,
-      lastError: mode !== 'mock' && !configured ? 'Using deterministic fallback because no API key is configured.' : undefined
-    };
-  });
-}
 
 function territory(index: number): NationState['territory'] {
   const cells: Array<{ polygon: Vec2[]; capital: Vec2; label: Vec2; elevation: number }> = [
@@ -233,18 +211,19 @@ function createNation(index: number): NationState {
   const provider = PROVIDERS[index];
   const nationId = `nation-${['axiom', 'vesper', 'lumen', 'meridian'][index]}`;
   const population = [2_150_000_000, 2_050_000_000, 1_980_000_000, 1_920_000_000][index];
+  const flags: Array<NationState['flag']> = [
+    { pattern: 'cross', primary: '#0b3142', secondary: '#58c7ff', emblem: 'A' },
+    { pattern: 'diagonal', primary: '#3a2617', secondary: '#ff9f45', emblem: 'V' },
+    { pattern: 'sun', primary: '#1c4024', secondary: '#9bd66f', emblem: 'L' },
+    { pattern: 'chevron', primary: '#2b1f45', secondary: '#c493ff', emblem: 'M' }
+  ];
   return {
     id: nationId,
     name: provider.nation,
     adjective: ['Axiomatic', 'Vesperian', 'Lumen', 'Meridian'][index],
     color: provider.color,
     secondaryColor: provider.secondary,
-    flag: [
-      { pattern: 'cross', primary: '#0b3142', secondary: '#58c7ff', emblem: 'A' },
-      { pattern: 'diagonal', primary: '#3a2617', secondary: '#ff9f45', emblem: 'V' },
-      { pattern: 'sun', primary: '#1c4024', secondary: '#9bd66f', emblem: 'L' },
-      { pattern: 'chevron', primary: '#2b1f45', secondary: '#c493ff', emblem: 'M' }
-    ][index],
+    flag: flags[index],
     delegateId: `delegate-${provider.provider}`,
     foundedTurn: 0,
     ideology: ['Civic technocracy', 'Pluralist pragmatism', 'Rights-first stewardship', 'Experimental federalism'][index],
@@ -303,6 +282,9 @@ function createDelegate(index: number, nation: NationState): DelegateState {
     status: 'deliberating',
     currentThought: 'Reviewing institutions, money supply, reserves, and diplomatic posture.',
     lastActionType: 'observe',
+    lastProviderSource: modeFromEnv() === 'mock' ? 'mock' : providerConfigured(provider.provider) ? 'live' : 'blocked',
+    lastModelLatencyMs: 0,
+    lastProviderError: modeFromEnv() !== 'mock' && !providerConfigured(provider.provider) ? 'No provider API key is configured for this delegate.' : undefined,
     turnCount: 0
   };
 }
@@ -511,13 +493,24 @@ function addDecision(
   world.decisions = world.decisions.slice(-80);
 }
 
-function updateDelegate(world: WorldState, delegate: DelegateState, action: AgentActionPayload, speech: string) {
+function updateDelegate(
+  world: WorldState,
+  delegate: DelegateState,
+  action: AgentActionPayload,
+  thought: string,
+  source: DelegateState['lastProviderSource'],
+  latencyMs?: number,
+  providerError?: string
+) {
   const nation = getNation(world, delegate.nationId);
   const targetTerritory = action.territoryId ? world.neutralTerritories.find((territoryItem) => territoryItem.id === action.territoryId) : undefined;
   const waypoint = targetTerritory ? territoryWaypoint({ id: targetTerritory.id, polygon: targetTerritory.polygon }, world.turn, delegate.turnCount) : territoryWaypoint(nation, world.turn, delegate.turnCount);
   delegate.turnCount += 1;
   delegate.lastActionType = action.type;
-  delegate.currentThought = speech;
+  delegate.currentThought = thought;
+  delegate.lastProviderSource = source;
+  delegate.lastModelLatencyMs = latencyMs;
+  delegate.lastProviderError = providerError;
   delegate.status = action.type.includes('trade') || action.type.includes('treaty') || action.type.includes('alliance') ? 'negotiating' : action.type === 'vote' ? 'voting' : action.type === 'move' || action.type === 'claim_land' || action.type === 'patrol_frontier' ? 'moving' : 'governing';
   delegate.target = waypoint;
   delegate.position = {
@@ -1005,20 +998,111 @@ function drift(world: WorldState) {
   world.market.riskIndex = round(clamp(world.market.riskIndex + world.stats.activeWars * 0.4 - 0.12));
 }
 
-export function stepWorld(world: WorldState): WorldState {
-  const delegate = world.delegates.find((item) => item.id === world.currentDelegateId) ?? world.delegates[0];
+type ResolvedTurn = ProviderTurn & {
+  source: DelegateState['lastProviderSource'];
+  latencyMs?: number;
+  error?: string;
+};
+
+function activeDelegate(world: WorldState): DelegateState {
+  return world.delegates.find((item) => item.id === world.currentDelegateId) ?? world.delegates[0];
+}
+
+function selectAutonomousDelegate(world: WorldState): DelegateState {
+  const nowMs = Date.now();
+  return world.delegates
+    .map((delegate, index) => {
+      const nation = getNation(world, delegate.nationId);
+      const openWar = world.wars.some((war) => war.status === 'active' && (war.attackers.includes(nation.id) || war.defenders.includes(nation.id)));
+      const unresolvedFrontier = world.neutralTerritories.some((territoryItem) => territoryItem.claimantNationIds.includes(nation.id) && territoryItem.controllingNationId !== nation.id);
+      const providerBias = providerConfigured(delegate.provider) ? 8 : world.mode === 'hybrid' ? 2 : -12;
+      const pressure =
+        delegate.affect.arousal * 0.24 +
+        delegate.affect.resolve * 0.18 +
+        (100 - nation.social.stability) * 0.16 +
+        nation.economy.fiat.inflation * 1.6 +
+        nation.security.warWeariness * 0.45 +
+        (openWar ? 22 : 0) +
+        (unresolvedFrontier ? 10 : 0) +
+        providerBias;
+      const driftValue = Math.sin(nowMs / 870 + index * 2.17 + world.seed * 0.01) * 9;
+      return { delegate, score: pressure + driftValue };
+    })
+    .sort((a, b) => b.score - a.score)[0]?.delegate ?? activeDelegate(world);
+}
+
+function deterministicTurn(world: WorldState, delegate: DelegateState, source: DelegateState['lastProviderSource'] = 'mock', error?: string): ResolvedTurn {
   const action = deterministicAction(world, delegate);
-  const speech = speechFor(world, delegate, action);
-  applyAction(world, delegate, action);
-  updateDelegate(world, delegate, action, speech);
-  addMessage(world, delegate.id, action.type.includes('war') || action.type.includes('catastrophic') ? 'crisis' : action.type.includes('proposal') || action.type === 'vote' ? 'assembly' : 'public', speech, action.type.includes('war') ? 'fear' : 'resolve', action.type, action.targetDelegateId);
+  return {
+    source,
+    error,
+    action,
+    speech: speechFor(world, delegate, action),
+    thought: speechFor(world, delegate, action),
+    channel: channelForAction(action)
+  };
+}
+
+function blockedLiveTurn(delegate: DelegateState, error: string): ResolvedTurn {
+  return {
+    source: 'blocked',
+    error,
+    action: { type: 'observe' },
+    channel: 'public',
+    speech: `${delegate.displayName} is blocked because its live provider is unavailable.`,
+    thought: `Live model turn blocked: ${error}`
+  };
+}
+
+async function providerTurn(world: WorldState, delegate: DelegateState): Promise<ResolvedTurn> {
+  if (world.mode === 'mock') return deterministicTurn(world, delegate, 'mock');
+  if (!providerConfigured(delegate.provider)) {
+    const error = `No API key is configured for ${delegate.provider}; set COMMUNION_MODE=hybrid for deterministic fallback or configure the provider for live simulation.`;
+    markProvider(delegate.provider, { lastCall: world.mode === 'hybrid' ? 'fallback' : 'blocked', lastError: error, latencyMs: 0, lastTurn: world.turn });
+    return world.mode === 'hybrid' ? deterministicTurn(world, delegate, 'fallback', error) : blockedLiveTurn(delegate, error);
+  }
+  const started = Date.now();
+  try {
+    const turn = await callModelProvider(world, delegate);
+    const latencyMs = Date.now() - started;
+    markProvider(delegate.provider, { lastCall: 'live', lastError: undefined, latencyMs, lastTurn: world.turn });
+    return { ...turn, source: 'live', latencyMs };
+  } catch (reason) {
+    const latencyMs = Date.now() - started;
+    const error = reason instanceof Error ? reason.message : String(reason);
+    markProvider(delegate.provider, { lastCall: world.mode === 'hybrid' ? 'fallback' : 'blocked', lastError: error, latencyMs, lastTurn: world.turn });
+    return world.mode === 'hybrid' ? deterministicTurn(world, delegate, 'fallback', error) : blockedLiveTurn(delegate, error);
+  }
+}
+
+function channelForAction(action: AgentActionPayload): ChatMessage['channel'] {
+  if (action.type.includes('war') || action.type.includes('catastrophic') || action.type === 'contest_land') return 'crisis';
+  if (action.type === 'vote' || action.type === 'propose_policy') return 'assembly';
+  return 'public';
+}
+
+function commitTurn(world: WorldState, delegate: DelegateState, turn: ResolvedTurn, scheduling: 'sequential' | 'free-flow' = 'sequential'): WorldState {
+  applyAction(world, delegate, turn.action);
+  updateDelegate(world, delegate, turn.action, turn.thought, turn.source, turn.latencyMs, turn.error);
+  addMessage(world, delegate.id, turn.channel, turn.speech, turn.action.type.includes('war') || turn.action.type === 'contest_land' ? 'fear' : 'resolve', turn.action.type, turn.action.targetDelegateId);
   ageOpenProposals(world);
   drift(world);
   world.turn += 1;
   world.day = 1 + Math.floor(world.turn / Math.max(1, world.delegates.length)) % 360;
   world.year = FOUNDING_YEAR + Math.floor(world.turn / (world.delegates.length * 360));
-  world.currentDelegateId = world.delegates[world.turn % world.delegates.length].id;
+  world.currentDelegateId = scheduling === 'free-flow' ? delegate.id : world.delegates[world.turn % world.delegates.length].id;
   return recomputeWorld(world);
+}
+
+export function stepWorld(world: WorldState): WorldState {
+  const delegate = activeDelegate(world);
+  return commitTurn(world, delegate, deterministicTurn(world, delegate, 'mock'));
+}
+
+export async function stepWorldWithProviders(world: WorldState): Promise<WorldState> {
+  const delegate = world.mode === 'mock' ? activeDelegate(world) : selectAutonomousDelegate(world);
+  world.currentDelegateId = delegate.id;
+  return commitTurn(world, delegate, await providerTurn(world, delegate), world.mode === 'mock' ? 'sequential' : 'free-flow');
 }
 
 function speechFor(world: WorldState, delegate: DelegateState, action: AgentActionPayload): string {
@@ -1050,6 +1134,11 @@ export function controlWorld(world: WorldState, action: 'run' | 'pause' | 'step'
   if (action === 'speed') world.speed = clamp(speed ?? 1, 0.5, 8);
   if (action === 'step') stepWorld(world);
   return recomputeWorld(world);
+}
+
+export async function controlWorldAsync(world: WorldState, action: 'run' | 'pause' | 'step' | 'reset' | 'speed', speed?: number): Promise<WorldState> {
+  if (action === 'step') return stepWorldWithProviders(world);
+  return controlWorld(world, action, speed);
 }
 
 export function validateGoldConservation(world: WorldState): boolean {
