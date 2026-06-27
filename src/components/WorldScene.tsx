@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import populatedPlacesData from '../data/ne_110m_populated_places.json';
 import { Flag } from './Flag';
+import { GltfHuman } from './GltfHuman';
 import { Humanoid } from './Humanoid';
 import { RealisticGlobe } from './RealisticGlobe';
 import { GLOBE_RADIUS, lonLatToVector, simulationPointToLonLat, simulationPointToVector, surfaceQuaternion } from '../lib/globe';
@@ -335,6 +336,18 @@ function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectN
       {world.delegates.map((delegate) => {
         const nation = world.nations.find((item) => item.id === delegate.nationId)!;
         const message = [...world.messages].reverse().find((item) => item.fromDelegateId === delegate.id && item.turn >= world.turn - 2);
+        // Realistic rigged human for the exterior view; procedural model for anatomy modes.
+        if (anatomyMode === 'exterior') {
+          return (
+            <GltfHuman
+              key={delegate.id}
+              delegate={delegate}
+              nation={nation}
+              active={delegate.id === world.currentDelegateId}
+              onSelect={() => onSelectNation(nation.id)}
+            />
+          );
+        }
         return (
           <Humanoid
             key={delegate.id}
