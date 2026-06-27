@@ -125,5 +125,5 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .world-summary svg { color: #6d8b92; }
 .world-summary span { font-size: 8px; color: #6f858b; text-transform: uppercase; letter-spacing: 0.08em; }
 .world-summary strong { font-size: 10px; color: #d0dee0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.world-summary .current-turn { border-right: 0; }
-.world-summary .current-turn svg { color: var(--cyan); }
+.world-summary .current-flow { border-right: 0; }
+.world-summary .current-flow svg { color: var(--cyan); }

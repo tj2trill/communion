@@ -273,6 +273,41 @@ test('live flow frame can resolve multiple delegates concurrently', async () => 
   }
 });
 
+test('free-flow state exposes autonomous pressure and active impulses', async () => {
+  const previousMode = process.env.COMMUNION_MODE;
+  const previousWidth = process.env.FLOW_ACTORS_PER_TICK;
+  try {
+    process.env.COMMUNION_MODE = 'live';
+    process.env.FLOW_ACTORS_PER_TICK = '2';
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.XAI_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    const world = createInitialWorld();
+    assert.equal(world.flow.scheduling, 'free-flow');
+    assert.equal(world.flow.scheduler, 'autonomous-pressure');
+    assert.equal(world.flow.actorsPerFrame, 2);
+    assert.equal(world.flow.activeActorIds.length, 2);
+    for (const delegate of world.delegates) {
+      assert.ok(delegate.autonomy.readiness >= 0 && delegate.autonomy.readiness <= 100);
+      assert.ok(delegate.autonomy.pressure >= 0 && delegate.autonomy.pressure <= 100);
+      assert.ok(delegate.autonomy.reason.length > 4);
+    }
+    const beforeActors = new Set(world.flow.activeActorIds);
+    await stepWorldWithProviders(world);
+    assert.equal(world.turn, 2);
+    assert.equal(world.flow.actorsPerFrame, 2);
+    assert.equal(world.flow.activeActorIds.length, 2);
+    assert.equal(world.flow.activeActorIds.every((id) => world.delegates.some((delegate) => delegate.id === id)), true);
+    assert.equal([...beforeActors].some((id) => world.delegates.find((delegate) => delegate.id === id)?.turnCount), true);
+    assert.equal(validateGoldConservation(world), true);
+  } finally {
+    process.env.COMMUNION_MODE = previousMode;
+    if (previousWidth === undefined) delete process.env.FLOW_ACTORS_PER_TICK;
+    else process.env.FLOW_ACTORS_PER_TICK = previousWidth;
+  }
+});
+
 test('mock provider stepping remains single delegate by default', async () => {
   const previousMode = process.env.COMMUNION_MODE;
   const previousWidth = process.env.FLOW_ACTORS_PER_TICK;

@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { generateCitizen, MOOD_COLOR } from '../lib/citizen';
+import { PostProcessing } from './PostProcessing';
 import type { NationState, ResourceState, SettlementState } from '../lib/types';
 
 // SimCity-style city dive-in. Procedurally and deterministically builds a gridded
@@ -286,7 +287,9 @@ function Citizens({
       const perpZ = walker.ti !== walker.i ? offset : 0;
       const group = refs.current[index];
       if (group) {
-        group.position.set(ax + (bx - ax) * walker.t + perpX, 0.18, az + (bz - az) * walker.t + perpZ);
+        // Gentle walk bob keyed to stride progress so the crowd reads as alive.
+        const bob = Math.abs(Math.sin(walker.t * Math.PI * 2 + index)) * 0.05;
+        group.position.set(ax + (bx - ax) * walker.t + perpX, 0.18 + bob, az + (bz - az) * walker.t + perpZ);
         group.rotation.y = Math.atan2(bx - ax, bz - az);
       }
     });
@@ -297,11 +300,29 @@ function Citizens({
       {walkers.map((walker, index) => {
         const featured = index % bubbleEvery === 0;
         const citizen = featured ? generateCitizen(settlement, nation, index) : null;
+        // Slight per-citizen shirt-tone variation so the crowd is not uniform.
+        const shirt = index % 3 === 0 ? color : index % 3 === 1 ? nation.color : '#e7eef0';
+        const moodEmissive = citizen ? MOOD_COLOR[citizen.mood] : color;
         return (
-          <group key={index} ref={(node) => (refs.current[index] = node)}>
-            <mesh castShadow onClick={(event) => { event.stopPropagation(); onInspect(index); }}>
-              <capsuleGeometry args={[0.12, 0.28, 4, 6]} />
-              <meshStandardMaterial color={color} emissive={citizen ? MOOD_COLOR[citizen.mood] : color} emissiveIntensity={citizen ? 0.4 : 0.12} roughness={0.6} />
+          <group key={index} ref={(node) => (refs.current[index] = node)} onClick={(event) => { event.stopPropagation(); onInspect(index); }}>
+            {/* Legs */}
+            <mesh position={[-0.06, 0.1, 0]} castShadow>
+              <capsuleGeometry args={[0.05, 0.16, 3, 6]} />
+              <meshStandardMaterial color="#2c3a42" roughness={0.8} />
+            </mesh>
+            <mesh position={[0.06, 0.1, 0]} castShadow>
+              <capsuleGeometry args={[0.05, 0.16, 3, 6]} />
+              <meshStandardMaterial color="#2c3a42" roughness={0.8} />
+            </mesh>
+            {/* Torso */}
+            <mesh position={[0, 0.34, 0]} castShadow>
+              <capsuleGeometry args={[0.1, 0.2, 4, 8]} />
+              <meshStandardMaterial color={shirt} emissive={moodEmissive} emissiveIntensity={citizen ? 0.42 : 0.12} roughness={0.62} />
+            </mesh>
+            {/* Head */}
+            <mesh position={[0, 0.56, 0]} castShadow>
+              <sphereGeometry args={[0.082, 10, 8]} />
+              <meshStandardMaterial color="#c99b7b" roughness={0.7} />
             </mesh>
             {citizen && (
               <Html center position={[0, 0.95, 0]} distanceFactor={20} className="city-html">
@@ -404,6 +425,7 @@ export function CityScene({ settlement, nation, onClose }: CitySceneProps) {
             <meshStandardMaterial color="#23282d" roughness={0.9} />
           </mesh>
         )}
+        <PostProcessing strength={0.62} radius={0.5} threshold={0.8} />
         <OrbitControls makeDefault enableDamping dampingFactor={0.08} minDistance={half * 0.8} maxDistance={half * 4} maxPolarAngle={Math.PI / 2.1} />
       </Canvas>
 

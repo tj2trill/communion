@@ -164,7 +164,7 @@ export default function App() {
 
         <div className="simulation-meta">
           <span className={`live-dot ${world.running ? 'running' : ''}`} />
-          <div><strong>{world.running ? 'LIVE AI FLOW ACTIVE' : 'LIVE AI FLOW PAUSED'}</strong><small>YEAR {world.year} · DAY {world.day} · EVENTS {world.turn}</small></div>
+          <div><strong>{world.running ? 'LIVE AI FLOW ACTIVE' : 'LIVE AI FLOW PAUSED'}</strong><small>YEAR {world.year} · DAY {world.day} · FLOW {world.turn}</small></div>
         </div>
 
         <div className="provider-strip">
@@ -181,7 +181,7 @@ export default function App() {
           <button className="icon-button" onClick={() => void control(world.running ? 'pause' : 'run')} disabled={busy} title={world.running ? 'Pause' : 'Run'}>
             {world.running ? <Pause size={17} /> : <Play size={17} />}
           </button>
-          <button className="icon-button" onClick={() => void control('step')} disabled={busy || world.running} title="Advance live flow"><StepForward size={17} /></button>
+          <button className="icon-button" onClick={() => void control('step')} disabled={busy || world.running} title="Inject one autonomy frame"><StepForward size={17} /></button>
           <div className="speed-control" title="Simulation speed">
             <Gauge size={15} />
             <select value={world.speed} onChange={(event) => void control('speed', Number(event.target.value))}>

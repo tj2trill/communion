@@ -8,6 +8,7 @@ import populatedPlacesData from '../data/ne_110m_populated_places.json';
 import { Flag } from './Flag';
 import { GltfHuman } from './GltfHuman';
 import { Humanoid } from './Humanoid';
+import { PostProcessing } from './PostProcessing';
 import { RealisticGlobe } from './RealisticGlobe';
 import { GLOBE_RADIUS, lonLatToVector, simulationPointToLonLat, simulationPointToVector, surfaceQuaternion } from '../lib/globe';
 import type { AnatomyMode, CivilianCohortState, NationState, NeutralTerritoryState, OverlayMode, SettlementState, TransportKind, TransportLink, Vec2, WorldState } from '../lib/types';
@@ -647,6 +648,8 @@ function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectN
           </Html>
         );
       })}
+
+      <PostProcessing strength={0.5} radius={0.45} threshold={0.85} />
 
       <OrbitControls
         makeDefault

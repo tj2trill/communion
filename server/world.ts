@@ -712,7 +712,14 @@ function createDelegate(index: number, nation: NationState): DelegateState {
     lastProviderSource: modeFromEnv() === 'mock' ? 'mock' : providerConfigured(provider.provider) ? 'live' : 'blocked',
     lastModelLatencyMs: 0,
     lastProviderError: modeFromEnv() !== 'mock' && !providerConfigured(provider.provider) ? 'No provider API key is configured for this delegate.' : undefined,
-    turnCount: 0
+    turnCount: 0,
+    autonomy: {
+      pressure: 0,
+      readiness: 0,
+      priority: 0,
+      reason: 'Founding review',
+      cadence: modeFromEnv() === 'mock' ? 'watching' : providerConfigured(provider.provider) ? 'ready' : 'blocked'
+    }
   };
 }
 
@@ -799,6 +806,14 @@ export function createInitialWorld(seed = 42): WorldState {
     running: process.env.AUTO_START === 'true',
     speed: 1,
     mode: modeFromEnv(),
+    flow: {
+      scheduling: modeFromEnv() === 'mock' ? 'sequential' : 'free-flow',
+      scheduler: modeFromEnv() === 'mock' ? 'manual-sequence' : 'autonomous-pressure',
+      actorsPerFrame: 1,
+      activeActorIds: [delegates[0].id],
+      pulseMs: Math.max(250, Number(process.env.TICK_MS ?? 1800)),
+      lastEvent: 0
+    },
     lastUpdated: now(),
     currentDelegateId: delegates[0].id,
     delegates,
@@ -957,6 +972,14 @@ function updateDelegate(
 
 export function recomputeWorld(world: WorldState): WorldState {
   world.transportLinks ??= [];
+  world.flow ??= {
+    scheduling: world.mode === 'mock' ? 'sequential' : 'free-flow',
+    scheduler: world.mode === 'mock' ? 'manual-sequence' : 'autonomous-pressure',
+    actorsPerFrame: 1,
+    activeActorIds: [world.currentDelegateId],
+    pulseMs: Math.max(250, Number(process.env.TICK_MS ?? 1800)),
+    lastEvent: world.turn
+  };
   for (const [index, nation] of world.nations.entries()) {
     ensureNationCivilization(nation, index);
     const fiatValue = nation.economy.fiat.moneySupply * nation.economy.fiat.exchangeRateToWorld;
@@ -982,6 +1005,7 @@ export function recomputeWorld(world: WorldState): WorldState {
     democraticParticipation: round(world.proposals.reduce((sum, proposal) => sum + proposal.votes.length / Math.max(1, proposal.eligibleDelegateIds.length), 0) / Math.max(1, world.proposals.length) * 100)
   };
   world.providerStatus = providerStatuses(world.mode);
+  refreshFlowState(world);
   world.lastUpdated = now();
   return world;
 }
@@ -1657,6 +1681,8 @@ function autonomousPressure(world: WorldState, delegate: DelegateState, index: n
   const nation = getNation(world, delegate.nationId);
   const openWar = world.wars.some((war) => war.status === 'active' && (war.attackers.includes(nation.id) || war.defenders.includes(nation.id)));
   const unresolvedFrontier = world.neutralTerritories.some((territoryItem) => territoryItem.claimantNationIds.includes(nation.id) && territoryItem.controllingNationId !== nation.id);
+  const maxTurns = Math.max(0, ...world.delegates.map((item) => item.turnCount));
+  const idleBonus = Math.max(0, maxTurns - delegate.turnCount) * 32;
   const providerBias = providerConfigured(delegate.provider) ? 8 : world.mode === 'hybrid' ? 2 : -12;
   const pressure =
     delegate.affect.arousal * 0.24 +
@@ -1666,18 +1692,74 @@ function autonomousPressure(world: WorldState, delegate: DelegateState, index: n
     nation.security.warWeariness * 0.45 +
     (openWar ? 22 : 0) +
     (unresolvedFrontier ? 10 : 0) +
+    idleBonus +
     providerBias;
   return pressure + Math.sin(nowMs / 870 + index * 2.17 + world.seed * 0.01) * 9;
 }
 
-function selectAutonomousDelegates(world: WorldState, count: number): DelegateState[] {
+function flowPulseMs(): number {
+  const parsed = Number(process.env.TICK_MS ?? 1800);
+  return Math.max(250, Number.isFinite(parsed) ? parsed : 1800);
+}
+
+function autonomyReason(world: WorldState, delegate: DelegateState): string {
+  const status = world.providerStatus.find((item) => item.provider === delegate.provider);
+  if (world.mode === 'live' && !providerConfigured(delegate.provider)) return 'Provider not configured';
+  if (status?.lastCall === 'blocked') return 'Provider blocked';
+  if (status?.lastCall === 'fallback') return 'Fallback keeps the live flow moving';
+  const nation = getNation(world, delegate.nationId);
+  const openWar = world.wars.some((war) => war.status === 'active' && (war.attackers.includes(nation.id) || war.defenders.includes(nation.id)));
+  if (openWar) return 'Conflict pressure';
+  if (world.neutralTerritories.some((territoryItem) => territoryItem.claimantNationIds.includes(nation.id) && territoryItem.controllingNationId !== nation.id)) return 'Frontier claim unresolved';
+  if (nation.settlements.some((settlement) => settlement.constructionHalted)) return 'Construction needs resources';
+  if (nation.economy.fiat.inflation > 5.5) return 'Inflation pressure';
+  if (nation.economy.foodSecurity < 72) return 'Food system stress';
+  if ((nation.society?.civilUnrest ?? 0) > 24) return 'Civil unrest rising';
+  if (nation.social.stability < 68) return 'Domestic stability watch';
+  return 'Routine sovereign agenda';
+}
+
+function refreshFlowState(world: WorldState): void {
   const nowMs = Date.now();
+  const width = flowActorsPerFrame(world);
+  const active = world.mode === 'mock' ? [activeDelegate(world)] : selectAutonomousDelegates(world, width, nowMs);
+  const activeIds = new Set(active.map((delegate) => delegate.id));
+  for (const [index, delegate] of world.delegates.entries()) {
+    const pressure = autonomousPressure(world, delegate, index, nowMs);
+    const readiness = round(clamp(pressure * 1.12 - 8));
+    delegate.autonomy = {
+      pressure: round(clamp(pressure), 2),
+      readiness,
+      priority: activeIds.has(delegate.id) ? 100 : readiness,
+      reason: autonomyReason(world, delegate),
+      cadence: activeIds.has(delegate.id)
+        ? 'acting'
+        : world.mode === 'live' && !providerConfigured(delegate.provider)
+          ? 'blocked'
+          : readiness > 72
+            ? 'ready'
+            : readiness > 46
+              ? 'building'
+              : 'watching'
+    };
+  }
+  world.flow = {
+    scheduling: world.mode === 'mock' ? 'sequential' : 'free-flow',
+    scheduler: world.mode === 'mock' ? 'manual-sequence' : 'autonomous-pressure',
+    actorsPerFrame: width,
+    activeActorIds: active.map((delegate) => delegate.id),
+    pulseMs: flowPulseMs(),
+    lastEvent: world.turn
+  };
+}
+
+function selectAutonomousDelegates(world: WorldState, count: number, nowMs = Date.now()): DelegateState[] {
   const candidates = autonomousCandidates(world);
   return candidates
     .map((delegate, index) => {
       return { delegate, score: autonomousPressure(world, delegate, index, nowMs) };
     })
-    .sort((a, b) => a.delegate.turnCount - b.delegate.turnCount || b.score - a.score)
+    .sort((a, b) => b.score - a.score || a.delegate.turnCount - b.delegate.turnCount)
     .slice(0, count)
     .map((item) => item.delegate);
 }
@@ -1701,7 +1783,7 @@ function blockedLiveTurn(delegate: DelegateState, error: string): ResolvedTurn {
     action: { type: 'observe' },
     channel: 'public',
     speech: `${delegate.displayName} is blocked because its live provider is unavailable.`,
-    thought: `Live model turn blocked: ${error}`
+    thought: `Live model action blocked: ${error}`
   };
 }
 

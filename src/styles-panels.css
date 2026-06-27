@@ -257,6 +257,56 @@
 .thought-card .thought-error {
   color: #f0a64b;
 }
+.autonomy-meter {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 5px;
+  margin-top: 9px;
+  padding: 7px;
+  border: 1px solid rgba(151, 190, 199, 0.09);
+  border-radius: 6px;
+  background: rgba(4, 13, 17, 0.38);
+}
+.autonomy-meter > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+.autonomy-meter span,
+.autonomy-meter b,
+.autonomy-meter small {
+  min-width: 0;
+  font-size: 7px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.autonomy-meter span { color: #71868c; }
+.autonomy-meter b { color: #d4e5e7; font-variant-numeric: tabular-nums; }
+.autonomy-meter small {
+  display: block;
+  color: #8399a0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.autonomy-track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(151, 190, 199, 0.12);
+}
+.autonomy-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4a8d95, #66d3d0);
+}
+.cadence-acting { border-color: color-mix(in srgb, var(--nation) 44%, rgba(151, 190, 199, 0.12)); }
+.cadence-acting .autonomy-track i { background: linear-gradient(90deg, var(--nation), var(--cyan)); box-shadow: 0 0 10px color-mix(in srgb, var(--nation) 45%, transparent); }
+.cadence-ready .autonomy-track i { background: linear-gradient(90deg, #58a7c8, var(--green)); }
+.cadence-building .autonomy-track i { background: linear-gradient(90deg, #557d8b, #d9b65d); }
+.cadence-blocked .autonomy-track i { background: linear-gradient(90deg, #713a3a, var(--red)); }
 .thought-meta {
   display: flex;
   flex-wrap: wrap;

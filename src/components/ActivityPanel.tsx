@@ -14,7 +14,7 @@ function ChatFeed({ world }: { world: WorldState }) {
           <article className="chat-message" key={message.id} style={{ '--nation': nation?.color ?? '#809099' } as React.CSSProperties}>
             <header>
               <span className="model-avatar" style={{ background: nation?.color }}>{delegate?.displayName.slice(0, 1) ?? 'O'}</span>
-              <div><strong>{delegate?.displayName ?? 'Observer'}</strong><small>{nation?.name ?? 'External observer'} · event {message.turn}</small></div>
+              <div><strong>{delegate?.displayName ?? 'Observer'}</strong><small>{nation?.name ?? 'External observer'} · flow {message.turn}</small></div>
               <span className="channel">{message.channel}</span>
             </header>
             <p>{message.content}</p>
@@ -34,7 +34,7 @@ function DecisionFeed({ world }: { world: WorldState }) {
         const nation = world.nations.find((item) => item.id === decision.nationId);
         return (
           <article className={`decision-card severity-${decision.severity}`} key={decision.id}>
-            <header><span style={{ background: nation?.color ?? '#798a91' }} /><div><strong>{decision.title}</strong><small>{delegate?.displayName ?? decision.delegateId} · event {decision.turn}</small></div><b>{decision.binding ? 'binding' : 'recorded'}</b></header>
+            <header><span style={{ background: nation?.color ?? '#798a91' }} /><div><strong>{decision.title}</strong><small>{delegate?.displayName ?? decision.delegateId} · flow {decision.turn}</small></div><b>{decision.binding ? 'binding' : 'recorded'}</b></header>
             <p>{decision.summary}</p>
             {decision.consequences.length > 0 && <ul>{decision.consequences.map((item) => <li key={item}>{item}</li>)}</ul>}
           </article>
@@ -61,18 +61,29 @@ function ThoughtFeed({ world }: { world: WorldState }) {
     <div className="activity-scroll thought-feed">
       {world.delegates.map((delegate) => {
         const nation = world.nations.find((item) => item.id === delegate.nationId);
+        const autonomy = delegate.autonomy;
         return (
           <article className={`thought-card ${delegate.id === world.currentDelegateId ? 'active' : ''}`} key={delegate.id} style={{ '--nation': nation?.color ?? '#809099' } as React.CSSProperties}>
             <header>
               {nation && <Flag flag={nation.flag} className="thought-flag" />}
               <div>
                 <strong>{delegate.displayName}</strong>
-                <small>{nation?.name} · {delegate.status} · actions {delegate.turnCount} · {delegate.lastProviderSource}</small>
+                <small>{nation?.name} · {delegate.status} · impulses {delegate.turnCount} · {delegate.lastProviderSource}</small>
               </div>
               <span>{delegate.provider === 'google' ? 'Gemini' : delegate.provider.toUpperCase()}</span>
             </header>
             <p>{delegate.currentThought}</p>
             {delegate.lastProviderError && <p className="thought-error" title={delegate.lastProviderError}>{summarizeProviderError(delegate.lastProviderError)}</p>}
+            {autonomy && (
+              <div className={`autonomy-meter cadence-${autonomy.cadence}`}>
+                <div>
+                  <span>Autonomy</span>
+                  <b>{autonomy.readiness.toFixed(0)}%</b>
+                </div>
+                <div className="autonomy-track"><i style={{ width: `${Math.max(2, Math.min(100, autonomy.readiness))}%` }} /></div>
+                <small>{autonomy.cadence} · {autonomy.reason}</small>
+              </div>
+            )}
             <div className="thought-meta">
               <span>{delegate.lastActionType.replaceAll('_', ' ')}</span>
               {delegate.lastModelLatencyMs !== undefined && <b>{delegate.lastModelLatencyMs}ms</b>}
@@ -101,7 +112,7 @@ function ProposalCard({ proposal, world }: { proposal: ProposalState; world: Wor
         <i className="no" style={{ width: `${(no / Math.max(1, proposal.eligibleDelegateIds.length)) * 100}%` }} />
         <i className="abstain" style={{ width: `${(abstain / Math.max(1, proposal.eligibleDelegateIds.length)) * 100}%` }} />
       </div>
-      <footer><span>{yes} yes</span><span>{no} no</span><span>{abstain} abstain</span><b>review after event {proposal.closesTurn}</b></footer>
+      <footer><span>{yes} yes</span><span>{no} no</span><span>{abstain} abstain</span><b>review after flow {proposal.closesTurn}</b></footer>
     </article>
   );
 }

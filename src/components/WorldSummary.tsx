@@ -3,7 +3,11 @@ import type { WorldState } from '../lib/types';
 import { compact, decimal } from './PanelPrimitives';
 
 export function WorldSummary({ world }: { world: WorldState }) {
-  const current = world.delegates.find((delegate) => delegate.id === world.currentDelegateId);
+  const activeIds = world.flow?.activeActorIds?.length ? world.flow.activeActorIds : [world.currentDelegateId];
+  const activeNames = activeIds
+    .map((id) => world.delegates.find((delegate) => delegate.id === id)?.displayName)
+    .filter(Boolean) as string[];
+  const flowLabel = activeNames.length > 1 ? `${activeNames[0]} +${activeNames.length - 1}` : activeNames[0];
   return (
     <div className="world-summary">
       <div><UsersRound size={15} /><span>Population</span><strong>{compact.format(world.stats.population)}</strong></div>
@@ -12,7 +16,7 @@ export function WorldSummary({ world }: { world: WorldState }) {
       <div><Coins size={15} /><span>Gold</span><strong>{decimal.format(world.stats.goldReserves)} Au</strong></div>
       <div><ShieldAlert size={15} /><span>Wars</span><strong>{world.stats.activeWars}</strong></div>
       <div><HeartPulse size={15} /><span>Food security</span><strong>{world.stats.foodSecurity.toFixed(0)}</strong></div>
-      <div className="current-turn"><Sparkles size={15} /><span>Active model</span><strong>{current?.displayName}</strong></div>
+      <div className="current-flow" title={activeNames.join(', ')}><Sparkles size={15} /><span>Next impulse</span><strong>{flowLabel}</strong></div>
     </div>
   );
 }

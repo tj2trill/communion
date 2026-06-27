@@ -87,7 +87,7 @@ export function ConflictPanel({ world }: { world: WorldState }) {
             {war.catastrophicReview && (
               <div className={`strategic-review ${war.catastrophicReview.status}`}>
                 <h4><ShieldAlert size={15} /> Catastrophic consequence review</h4>
-                <div className="review-status"><span>{war.catastrophicReview.status}</span><b>authorization event {war.catastrophicReview.earliestAuthorizationTurn}</b></div>
+                <div className="review-status"><span>{war.catastrophicReview.status}</span><b>authorization flow {war.catastrophicReview.earliestAuthorizationTurn}</b></div>
                 <div className="metric-grid">
                   <Metric label="Target loss" value={compact.format(war.catastrophicReview.forecast.targetPopulationLoss)} tone="danger" />
                   <Metric label="Attacker loss" value={compact.format(war.catastrophicReview.forecast.attackerPopulationLoss)} tone="danger" />

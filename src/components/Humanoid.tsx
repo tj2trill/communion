@@ -264,6 +264,32 @@ export function Humanoid({
             <sphereGeometry args={[0.12, 16, 12]} />
             <meshStandardMaterial color="#c79072" roughness={0.85} />
           </mesh>
+          {/* Deeper layer: spine, kidneys, coiled intestines, and bladder. */}
+          <mesh position={[0, 1.42, -0.12]}>
+            <cylinderGeometry args={[0.028, 0.034, 0.92, 8]} />
+            <meshStandardMaterial color="#d9cdb4" roughness={0.74} />
+          </mesh>
+          <mesh position={[-0.14, 1.18, -0.05]} scale={[0.7, 1.1, 0.6]}>
+            <sphereGeometry args={[0.072, 14, 10]} />
+            <meshStandardMaterial color="#8f4a4a" roughness={0.8} />
+          </mesh>
+          <mesh position={[0.14, 1.18, -0.05]} scale={[0.7, 1.1, 0.6]}>
+            <sphereGeometry args={[0.072, 14, 10]} />
+            <meshStandardMaterial color="#8f4a4a" roughness={0.8} />
+          </mesh>
+          {[0, 1, 2, 3, 4].map((coil) => {
+            const angle = coil * 1.5;
+            return (
+              <mesh key={`intestine-${coil}`} position={[Math.cos(angle) * 0.09, 0.95 + (coil % 2) * 0.03, 0.06 + Math.sin(angle) * 0.05]}>
+                <sphereGeometry args={[0.06, 12, 10]} />
+                <meshStandardMaterial color="#c98f86" roughness={0.86} />
+              </mesh>
+            );
+          })}
+          <mesh position={[0, 0.86, 0.05]} scale={[1, 0.78, 0.85]}>
+            <sphereGeometry args={[0.085, 14, 10]} />
+            <meshStandardMaterial color="#d8b86a" roughness={0.82} transparent opacity={0.85} />
+          </mesh>
         </group>
       )}
 

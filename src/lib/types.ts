@@ -27,6 +27,14 @@ export interface ProviderStatus {
   lastTurn?: number;
 }
 
+export interface DelegateAutonomyState {
+  pressure: number;
+  readiness: number;
+  priority: number;
+  reason: string;
+  cadence: 'acting' | 'ready' | 'building' | 'watching' | 'blocked';
+}
+
 export interface DelegateState {
   id: string;
   provider: ProviderId;
@@ -45,6 +53,7 @@ export interface DelegateState {
   lastModelLatencyMs?: number;
   lastProviderError?: string;
   turnCount: number;
+  autonomy: DelegateAutonomyState;
 }
 
 export type InstitutionKind =
@@ -460,6 +469,15 @@ export interface WorldStats {
   democraticParticipation: number;
 }
 
+export interface FlowState {
+  scheduling: 'sequential' | 'free-flow';
+  scheduler: 'manual-sequence' | 'autonomous-pressure';
+  actorsPerFrame: number;
+  activeActorIds: string[];
+  pulseMs: number;
+  lastEvent: number;
+}
+
 export interface WorldState {
   id: string;
   name: string;
@@ -471,6 +489,7 @@ export interface WorldState {
   running: boolean;
   speed: number;
   mode: SimulationMode;
+  flow: FlowState;
   lastUpdated: string;
   currentDelegateId: string;
   delegates: DelegateState[];
