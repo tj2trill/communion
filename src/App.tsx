@@ -23,6 +23,7 @@ import {
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { ActivityPanel, type ActivityTab, LeftPanel, type LeftTab, WorldSummary } from './components/DashboardPanels';
 import { CityScene } from './components/CityScene';
+import { CountryFocusPanel } from './components/CountryFocusPanel';
 import { WorldScene } from './components/WorldScene';
 import { api } from './lib/api';
 import type { AnatomyMode, OverlayMode, WorldState } from './lib/types';
@@ -244,6 +245,14 @@ export default function App() {
               ))}
             </div>
           ) : null}
+
+          {selectedNation && (
+            <CountryFocusPanel
+              world={world}
+              nation={selectedNation}
+              onSelectCity={setSelectedCityId}
+            />
+          )}
 
           <div className="anatomy-toolbar glass-toolbar">
             <span><CircleUserRound size={15} /> AVATAR</span>
