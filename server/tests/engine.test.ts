@@ -7,6 +7,7 @@ import {
   buySovereignGold,
   createInitialWorld,
   issueFiat,
+  pulseWorld,
   sellSovereignGold,
   settleTrade,
   stepWorld,
@@ -111,6 +112,18 @@ test('observer prompts are logged but do not directly command state', () => {
   assert.equal(world.turn, turnBefore);
   assert.equal(world.observerPrompts.length, 1);
   assert.ok(world.messages.at(-1)?.content.includes('Observer prompt received'));
+});
+
+test('ambient pulses move the world without creating audit events or gold', () => {
+  const world = createInitialWorld();
+  const eventBefore = world.turn;
+  const gdpBefore = world.stats.gdp;
+  const targetsBefore = world.delegates.map((delegate) => `${delegate.target.x}:${delegate.target.z}`).join('|');
+  pulseWorld(world, 11);
+  assert.equal(world.turn, eventBefore);
+  assert.equal(totalGold(world), 6400);
+  assert.ok(world.stats.gdp > gdpBefore);
+  assert.notEqual(world.delegates.map((delegate) => `${delegate.target.x}:${delegate.target.z}`).join('|'), targetsBefore);
 });
 
 test('live mode blocks missing provider credentials instead of faking a model action', async () => {

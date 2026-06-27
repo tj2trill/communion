@@ -9,6 +9,7 @@ import {
   applyScenario,
   controlWorldAsync,
   createInitialWorld,
+  pulseWorld,
   providerStatuses,
   stepWorldWithProviders,
   validateGoldConservation
@@ -41,6 +42,8 @@ const promptSchema = z.object({
 
 let world = await loadWorld();
 let tickCounter = 0;
+let pulseCounter = 0;
+let worldEpoch = 0;
 
 app.disable('x-powered-by');
 app.use((request, response, next) => {
@@ -93,6 +96,11 @@ app.get('/api/stream', (request, response) => {
 app.post('/api/control', async (request, response) => {
   const parsed = controlSchema.safeParse(request.body);
   if (!parsed.success) return response.status(400).send(parsed.error.issues.map((issue) => issue.message).join('; '));
+  if (parsed.data.action === 'reset' || parsed.data.action === 'step') {
+    worldEpoch += 1;
+    tickCounter = 0;
+    pulseCounter = 0;
+  }
   world = await controlWorldAsync(world, parsed.data.action, parsed.data.speed);
   await afterMutation(`control:${parsed.data.action}`);
   response.json({ ok: true, state: world });
@@ -101,6 +109,7 @@ app.post('/api/control', async (request, response) => {
 app.post('/api/scenario', async (request, response) => {
   const parsed = scenarioSchema.safeParse(request.body);
   if (!parsed.success) return response.status(400).send(parsed.error.issues.map((issue) => issue.message).join('; '));
+  worldEpoch += 1;
   world = applyScenario(world, parsed.data.id);
   await afterMutation(`scenario:${parsed.data.id}`);
   response.json({ ok: true, state: world });
@@ -109,6 +118,7 @@ app.post('/api/scenario', async (request, response) => {
 app.post('/api/prompt', async (request, response) => {
   const parsed = promptSchema.safeParse(request.body);
   if (!parsed.success) return response.status(400).send(parsed.error.issues.map((issue) => issue.message).join('; '));
+  worldEpoch += 1;
   world = addObserverPrompt(world, parsed.data.text);
   await afterMutation('prompt');
   response.json({ ok: true, state: world });
@@ -133,14 +143,23 @@ let flowInFlight = false;
 
 setInterval(() => {
   if (!world.running) return;
-  if (flowInFlight) return;
+  pulseCounter += 1;
+  world = pulseWorld(world, pulseCounter);
+  broadcast(world);
+  if (persistState && pulseCounter % 4 === 0) {
+    void persistSnapshot();
+  }
   tickCounter += world.speed;
   if (tickCounter < 1) return;
+  if (flowInFlight) return;
   tickCounter = Math.max(0, tickCounter - 1);
   flowInFlight = true;
   void (async () => {
+    const epochAtStart = worldEpoch;
     try {
-      world = await stepWorldWithProviders(world);
+      const nextWorld = await stepWorldWithProviders(world);
+      if (epochAtStart !== worldEpoch) return;
+      world = nextWorld;
       await afterMutation('flow');
     } catch (reason) {
       world.running = false;
@@ -170,10 +189,14 @@ async function afterMutation(reason: string) {
   }
   broadcast(world);
   if (persistState) {
-    await mkdir(dataDir, { recursive: true });
-    await writeFile(worldPath, JSON.stringify(world, null, 2));
+    await persistSnapshot();
     await audit(reason);
   }
+}
+
+async function persistSnapshot() {
+  await mkdir(dataDir, { recursive: true });
+  await writeFile(worldPath, JSON.stringify(world, null, 2));
 }
 
 async function audit(reason: string) {

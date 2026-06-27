@@ -998,6 +998,49 @@ function drift(world: WorldState) {
   world.market.riskIndex = round(clamp(world.market.riskIndex + world.stats.activeWars * 0.4 - 0.12));
 }
 
+export function pulseWorld(world: WorldState, pulseIndex = world.turn + 1): WorldState {
+  const focusDelegate = world.delegates[pulseIndex % Math.max(1, world.delegates.length)];
+  for (const delegate of world.delegates) {
+    const nation = getNation(world, delegate.nationId);
+    const isFocus = delegate.id === focusDelegate?.id;
+    const waypoint = territoryWaypoint(nation, world.turn + pulseIndex, delegate.turnCount + pulseIndex + nation.name.length);
+    const blend = isFocus ? 0.18 : 0.08;
+    if (isFocus || delegate.status === 'moving') {
+      delegate.target = waypoint;
+      delegate.status = 'moving';
+    }
+    delegate.position = {
+      x: round(delegate.position.x * (1 - blend) + delegate.target.x * blend),
+      z: round(delegate.position.z * (1 - blend) + delegate.target.z * blend)
+    };
+    delegate.heading = Math.atan2(delegate.target.x - delegate.position.x, delegate.target.z - delegate.position.z);
+    delegate.affect = {
+      ...delegate.affect,
+      arousal: round(clamp(delegate.affect.arousal + Math.sin((pulseIndex + delegate.turnCount) * 0.7) * 0.08)),
+      fear: round(clamp(delegate.affect.fear - (world.stats.activeWars > 0 ? 0 : 0.04))),
+      resolve: round(clamp(delegate.affect.resolve + (isFocus ? 0.05 : 0.01)))
+    };
+  }
+  for (const nation of world.nations) {
+    const cycle = Math.sin((pulseIndex + nation.id.length) * 0.21);
+    nation.economy.gdp = round(nation.economy.gdp * (1 + nation.economy.annualGrowth / 100 / 720));
+    nation.economy.tradeVolume = round(nation.economy.tradeVolume * (1 + cycle * 0.0008));
+    nation.economy.fiat.confidence = round(clamp(nation.economy.fiat.confidence + cycle * 0.035 - nation.economy.fiat.inflation * 0.001));
+    nation.social.approval = round(clamp(nation.social.approval + (nation.economy.foodSecurity - 75) * 0.001 + cycle * 0.025));
+    nation.social.stability = round(clamp(nation.social.stability + (nation.social.approval - 65) * 0.002 - nation.security.warWeariness * 0.001));
+    nation.social.infrastructure = round(clamp(nation.social.infrastructure - world.stats.activeWars * 0.005 + 0.002));
+  }
+  for (const territoryItem of world.neutralTerritories) {
+    const claimPressure = territoryItem.claimantNationIds.length * 0.04;
+    territoryItem.contestLevel = round(clamp(territoryItem.contestLevel + claimPressure - (territoryItem.controllingNationId ? 0.015 : 0.005)));
+    territoryItem.fortification = round(clamp(territoryItem.fortification + (territoryItem.controllingNationId ? 0.03 : -0.02)));
+  }
+  world.market.riskIndex = round(clamp(world.market.riskIndex + world.stats.activeWars * 0.03 + Math.sin(pulseIndex * 0.17) * 0.04));
+  world.market.commodityIndex = round(clamp(world.market.commodityIndex + Math.sin(pulseIndex * 0.13) * 0.05, 40, 220));
+  world.market.energyPriceIndex = round(clamp(world.market.energyPriceIndex + Math.cos(pulseIndex * 0.11) * 0.04, 40, 240));
+  return recomputeWorld(world);
+}
+
 type ResolvedTurn = ProviderTurn & {
   source: DelegateState['lastProviderSource'];
   latencyMs?: number;
