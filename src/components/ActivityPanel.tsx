@@ -44,6 +44,18 @@ function DecisionFeed({ world }: { world: WorldState }) {
   );
 }
 
+// Provider/API errors arrive as long raw strings (rate-limit dumps, zod JSON).
+// Collapse them to a clean one-line status for the UI.
+function summarizeProviderError(error: string): string {
+  const e = error.toLowerCase();
+  if (e.includes('rate limit') || e.includes('429') || e.includes('quota') || e.includes('tokens per day')) return 'Rate-limited on the free tier - running deterministic fallback.';
+  if (e.includes('invalid_value') || e.includes('invalid option') || e.includes('not valid json') || e.includes('no message content') || e.includes('schema')) return 'Model reply did not parse - running deterministic fallback.';
+  if (e.includes('503') || e.includes('high demand') || e.includes('overloaded') || e.includes('502')) return 'Provider busy - running deterministic fallback.';
+  if (e.includes('api key') || e.includes('configured')) return 'No API key configured - running deterministic fallback.';
+  if (e.includes('timeout') || e.includes('aborted')) return 'Provider timed out - running deterministic fallback.';
+  return error.length > 120 ? `${error.slice(0, 117)}...` : error;
+}
+
 function ThoughtFeed({ world }: { world: WorldState }) {
   return (
     <div className="activity-scroll thought-feed">
@@ -60,7 +72,7 @@ function ThoughtFeed({ world }: { world: WorldState }) {
               <span>{delegate.provider === 'google' ? 'Gemini' : delegate.provider.toUpperCase()}</span>
             </header>
             <p>{delegate.currentThought}</p>
-            {delegate.lastProviderError && <p className="thought-error">{delegate.lastProviderError}</p>}
+            {delegate.lastProviderError && <p className="thought-error" title={delegate.lastProviderError}>{summarizeProviderError(delegate.lastProviderError)}</p>}
             <div className="thought-meta">
               <span>{delegate.lastActionType.replaceAll('_', ' ')}</span>
               {delegate.lastModelLatencyMs !== undefined && <b>{delegate.lastModelLatencyMs}ms</b>}

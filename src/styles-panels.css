@@ -7,14 +7,16 @@
 .side-panel { min-width: 0; min-height: 0; background: var(--panel); border-color: var(--line); display: flex; flex-direction: column; position: relative; z-index: 20; }
 .left-panel { border-right: 1px solid var(--line); }
 .right-panel { border-left: 1px solid var(--line); }
-.panel-tabs { height: 44px; flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); background: rgba(7, 16, 21, 0.9); }
+.panel-tabs { height: 44px; flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); background: rgba(7, 16, 21, 0.9); overflow: hidden; }
 .panel-tabs.four-tabs { grid-template-columns: repeat(4, 1fr); }
-.panel-tabs button { position: relative; display: flex; align-items: center; justify-content: center; gap: 5px; border: 0; border-right: 1px solid rgba(151, 190, 199, 0.08); background: transparent; color: #70868b; cursor: pointer; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; }
+.panel-tabs button { position: relative; min-width: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 4px; border: 0; border-right: 1px solid rgba(151, 190, 199, 0.08); background: transparent; color: #70868b; cursor: pointer; font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; }
+.panel-tabs button svg { flex: 0 0 auto; width: 14px; height: 14px; }
+.panel-tabs button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .panel-tabs button:last-child { border-right: 0; }
 .panel-tabs button:hover { color: #b8cbce; background: rgba(102, 211, 208, 0.035); }
 .panel-tabs button.active { color: #d9eaec; background: rgba(102, 211, 208, 0.07); }
 .panel-tabs button.active::after { content: ""; position: absolute; left: 15%; right: 15%; bottom: 0; height: 2px; background: var(--cyan); box-shadow: 0 0 8px rgba(102, 211, 208, 0.45); }
-.panel-tabs button b { min-width: 17px; height: 15px; display: grid; place-items: center; border-radius: 8px; background: rgba(126, 154, 160, 0.12); font-size: 8px; color: #91a6ab; }
+.panel-tabs button b { flex: 0 0 auto; min-width: 14px; height: 15px; padding: 0 3px; display: grid; place-items: center; border-radius: 8px; background: rgba(126, 154, 160, 0.12); font-size: 8px; color: #91a6ab; }
 .panel-scroll, .activity-scroll { min-height: 0; flex: 1; overflow-y: auto; overflow-x: hidden; }
 .panel-scroll { padding: 10px; }
 .activity-scroll { padding: 9px; }
