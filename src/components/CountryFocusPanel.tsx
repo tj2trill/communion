@@ -1,4 +1,5 @@
-import { Activity, Brain, Building2, Factory, MapPin, Route, TrainFront, UsersRound } from 'lucide-react';
+import { Activity, Brain, Building2, ChevronDown, ChevronUp, Factory, MapPin, Route, TrainFront, UsersRound } from 'lucide-react';
+import { useState } from 'react';
 import type { NationState, SettlementState, WorldState } from '../lib/types';
 import { Flag } from './Flag';
 import { compact, decimal } from './PanelPrimitives';
@@ -31,9 +32,10 @@ export function CountryFocusPanel({
   const activeCohorts = cohorts.filter((cohort) => !cohort.blocked).length;
   const recentDecision = [...world.decisions].reverse().find((decision) => decision.nationId === nation.id);
   const cities = [...nation.settlements].sort((a, b) => settlementScore(b) - settlementScore(a)).slice(0, 4);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside className="country-focus-panel" style={{ '--nation': nation.color } as React.CSSProperties}>
+    <aside className={`country-focus-panel${collapsed ? ' collapsed' : ''}`} style={{ '--nation': nation.color } as React.CSSProperties}>
       <header>
         <Flag flag={nation.flag} className="country-focus-flag" />
         <div>
@@ -41,8 +43,13 @@ export function CountryFocusPanel({
           <small>{delegate?.displayName ?? 'Autonomous delegate'} · {delegate?.status ?? 'active'}</small>
         </div>
         <span className={`country-source source-${delegate?.lastProviderSource ?? 'mock'}`}>{sourceLabel(delegate?.lastProviderSource ?? 'mock')}</span>
+        <button className="country-focus-toggle" onClick={() => setCollapsed((value) => !value)} title={collapsed ? 'Expand panel' : 'Collapse panel to clear the map'}>
+          {collapsed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+        </button>
       </header>
 
+      {collapsed ? null : (
+      <>
       <section className="country-thought">
         <Brain size={15} />
         <p>{delegate?.currentThought ?? 'No active thought recorded yet.'}</p>
@@ -79,6 +86,8 @@ export function CountryFocusPanel({
           <span>{recentDecision.type.replaceAll('_', ' ')}</span>
           <strong>{recentDecision.title}</strong>
         </div>
+      )}
+      </>
       )}
     </aside>
   );

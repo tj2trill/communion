@@ -476,3 +476,31 @@
   max-height: calc(100vh - 6.5rem);
   overflow-y: auto;
 }
+
+/* Collapsible country focus panel so it can be cleared off the globe. */
+.country-focus-panel > header {
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+}
+
+.country-focus-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(150, 220, 255, 0.28);
+  background: rgba(12, 24, 36, 0.6);
+  color: #dceeff;
+  cursor: pointer;
+}
+
+.country-focus-toggle:hover {
+  background: rgba(40, 90, 130, 0.7);
+}
+
+.country-focus-panel.collapsed {
+  grid-template-rows: auto;
+  max-height: none;
+  overflow: visible;
+}

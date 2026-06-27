@@ -871,6 +871,50 @@ function pointInPolygon(point: Vec2, polygon: Vec2[]): boolean {
   return inside;
 }
 
+// A nation has "overtaken" another when it is the attacker in a war the other
+// side has effectively lost (defender ended the war with collapsed capacity).
+// Until then a nation may not enter another sovereign nation's land.
+function isOvertakenBy(world: WorldState, occupierId: string, targetId: string): boolean {
+  return world.wars.some((war) =>
+    war.attackers.includes(occupierId) &&
+    war.defenders.includes(targetId) &&
+    (war.status === 'ended' || war.status === 'ceasefire') &&
+    (getNation(world, targetId).security.conventionalCapacity < 12 || war.infrastructureLoss > 70)
+  );
+}
+
+// Land a nation's people and delegates may legally occupy: its own territory,
+// any neutral free land (unowned, not another country), and the territory of
+// any nation it has overtaken. Crossing into another sovereign nation is not
+// permitted unless that nation is overtaken.
+function nationMayOccupy(world: WorldState, nation: NationState, point: Vec2): boolean {
+  if (pointInPolygon(point, nation.territory.polygon)) return true;
+  for (const territoryItem of world.neutralTerritories) {
+    if (pointInPolygon(point, territoryItem.polygon)) return true; // free land
+  }
+  for (const other of world.nations) {
+    if (other.id === nation.id) continue;
+    if (pointInPolygon(point, other.territory.polygon)) {
+      return isOvertakenBy(world, nation.id, other.id);
+    }
+  }
+  return false; // open water or otherwise off-limits
+}
+
+// Snap a point back into legally occupiable land by walking it toward the
+// nation's capital until it is inside an allowed region. Locks borders so
+// characters stop drifting across them.
+function confineToNationLand(world: WorldState, nation: NationState, point: Vec2): Vec2 {
+  if (nationMayOccupy(world, nation, point)) return point;
+  const capital = nation.territory.capital;
+  for (let step = 1; step <= 9; step += 1) {
+    const t = step / 10;
+    const probe = { x: round(point.x + (capital.x - point.x) * t), z: round(point.z + (capital.z - point.z) * t) };
+    if (nationMayOccupy(world, nation, probe)) return probe;
+  }
+  return { x: round(capital.x), z: round(capital.z) };
+}
+
 function territoryWaypoint(polygonOwner: { id: string; territory?: NationState['territory']; polygon?: Vec2[] }, turn: number, delegateTurns: number): Vec2 {
   const polygon = polygonOwner.territory?.polygon ?? polygonOwner.polygon ?? [];
   const fallback = polygonOwner.territory?.capital ?? polygon[0] ?? { x: 0, z: 0 };
@@ -955,11 +999,11 @@ function updateDelegate(
   delegate.lastModelLatencyMs = latencyMs;
   delegate.lastProviderError = providerError;
   delegate.status = action.type.includes('trade') || action.type.includes('treaty') || action.type.includes('alliance') ? 'negotiating' : action.type === 'vote' ? 'voting' : action.type === 'move' || action.type === 'claim_land' || action.type === 'patrol_frontier' ? 'moving' : 'governing';
-  delegate.target = waypoint;
-  delegate.position = {
+  delegate.target = confineToNationLand(world, nation, waypoint);
+  delegate.position = confineToNationLand(world, nation, {
     x: round(delegate.position.x * 0.55 + delegate.target.x * 0.45),
     z: round(delegate.position.z * 0.55 + delegate.target.z * 0.45)
-  };
+  });
   delegate.heading = Math.atan2(delegate.target.x - delegate.position.x, delegate.target.z - delegate.position.z);
   delegate.affect = {
     valence: clamp(delegate.affect.valence + (action.type === 'humanitarian_aid' || action.type === 'peace_offer' ? 4 : action.type.includes('war') || action.type.includes('attack') ? -7 : 1)),
@@ -1612,16 +1656,16 @@ export function pulseWorld(world: WorldState, pulseIndex = world.turn + 1): Worl
   for (const delegate of world.delegates) {
     const nation = getNation(world, delegate.nationId);
     const isFocus = delegate.id === focusDelegate?.id;
-    const waypoint = territoryWaypoint(nation, world.turn + pulseIndex, delegate.turnCount + pulseIndex + nation.name.length);
+    const waypoint = confineToNationLand(world, nation, territoryWaypoint(nation, world.turn + pulseIndex, delegate.turnCount + pulseIndex + nation.name.length));
     const blend = isFocus ? 0.18 : 0.08;
     if (isFocus || delegate.status === 'moving') {
       delegate.target = waypoint;
       delegate.status = 'moving';
     }
-    delegate.position = {
+    delegate.position = confineToNationLand(world, nation, {
       x: round(delegate.position.x * (1 - blend) + delegate.target.x * blend),
       z: round(delegate.position.z * (1 - blend) + delegate.target.z * blend)
-    };
+    });
     delegate.heading = Math.atan2(delegate.target.x - delegate.position.x, delegate.target.z - delegate.position.z);
     delegate.affect = {
       ...delegate.affect,

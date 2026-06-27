@@ -476,3 +476,25 @@ test('slice 4: society evolution is deterministic', () => {
   }
   assert.deepEqual(a.society, b.society);
 });
+
+test('slice: delegates stay on their own land or free land, never inside another nation', () => {
+  function inPolygon(point: { x: number; z: number }, polygon: { x: number; z: number }[]) {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
+      const pi = polygon[i];
+      const pj = polygon[j];
+      if (pi.z > point.z !== pj.z > point.z && point.x < ((pj.x - pi.x) * (point.z - pi.z)) / (pj.z - pi.z) + pi.x) inside = !inside;
+    }
+    return inside;
+  }
+  const world = createInitialWorld();
+  for (let i = 0; i < 12; i += 1) stepWorld(world);
+  for (const delegate of world.delegates) {
+    const own = world.nations.find((nation) => nation.id === delegate.nationId)!;
+    const onOwnLand = inPolygon(delegate.position, own.territory.polygon);
+    const onFreeLand = world.neutralTerritories.some((territory) => inPolygon(delegate.position, territory.polygon));
+    const insideForeign = world.nations.some((nation) => nation.id !== own.id && inPolygon(delegate.position, nation.territory.polygon));
+    assert.equal(insideForeign, false, `${delegate.id} crossed into another nation`);
+    assert.ok(onOwnLand || onFreeLand, `${delegate.id} drifted off legal land`);
+  }
+});
