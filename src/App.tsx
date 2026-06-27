@@ -1,6 +1,7 @@
 import {
   Activity,
   Bone,
+  Brain,
   ChevronDown,
   CircleUserRound,
   Coins,
@@ -26,7 +27,7 @@ import { CityScene } from './components/CityScene';
 import { CountryFocusPanel } from './components/CountryFocusPanel';
 import { WorldScene } from './components/WorldScene';
 import { api } from './lib/api';
-import type { AnatomyMode, OverlayMode, WorldState } from './lib/types';
+import type { AnatomyMode, OverlayMode, SimulationMode, WorldState } from './lib/types';
 
 const scenarios = [
   { id: 'gold-rush', label: 'Gold rush', description: 'Scarce reserves and competitive sovereign buying', icon: Coins },
@@ -113,6 +114,20 @@ export default function App() {
     }
   }
 
+  async function setMode(mode: SimulationMode) {
+    if (busy || mode === world?.mode) return;
+    setBusy(true);
+    try {
+      const response = await api.mode(mode);
+      setWorld(response.state);
+      setError(undefined);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function applyScenario(id: string) {
     if (busy) return;
     setBusy(true);
@@ -183,6 +198,14 @@ export default function App() {
             {world.running ? <Pause size={17} /> : <Play size={17} />}
           </button>
           <button className="icon-button" onClick={() => void control('step')} disabled={busy || world.running} title="Inject one autonomy frame"><StepForward size={17} /></button>
+          <div className={`mode-control mode-${world.mode}`} title={world.mode === 'live' ? 'Strict live: unavailable providers block instead of falling back' : world.mode === 'hybrid' ? 'Hybrid: live providers act, unavailable providers use deterministic fallback' : 'Mock lab: deterministic local delegates'}>
+            <Brain size={15} />
+            <select value={world.mode} onChange={(event) => void setMode(event.target.value as SimulationMode)} disabled={busy}>
+              <option value="hybrid">Hybrid flow</option>
+              <option value="live">Strict live</option>
+              <option value="mock">Mock lab</option>
+            </select>
+          </div>
           <div className="speed-control" title="Simulation speed">
             <Gauge size={15} />
             <select value={world.speed} onChange={(event) => void control('speed', Number(event.target.value))}>

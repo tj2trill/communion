@@ -5,6 +5,7 @@ import {
   applyScenario,
   authorizeCatastrophic,
   buySovereignGold,
+  controlWorld,
   createInitialWorld,
   issueFiat,
   pulseWorld,
@@ -270,6 +271,45 @@ test('live flow frame can resolve multiple delegates concurrently', async () => 
     process.env.COMMUNION_MODE = previousMode;
     if (previousWidth === undefined) delete process.env.FLOW_ACTORS_PER_TICK;
     else process.env.FLOW_ACTORS_PER_TICK = previousWidth;
+  }
+});
+
+test('runtime mode control switches between strict live blocking and hybrid fallback', async () => {
+  const previousMode = process.env.COMMUNION_MODE;
+  const previousWidth = process.env.FLOW_ACTORS_PER_TICK;
+  const previousKeys = {
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    XAI_API_KEY: process.env.XAI_API_KEY,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY
+  };
+  try {
+    process.env.COMMUNION_MODE = 'hybrid';
+    process.env.FLOW_ACTORS_PER_TICK = '1';
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.XAI_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    const world = createInitialWorld();
+
+    controlWorld(world, 'mode', undefined, 'live');
+    assert.equal(world.mode, 'live');
+    await stepWorldWithProviders(world);
+    assert.equal(world.delegates.some((delegate) => delegate.lastProviderSource === 'blocked' && delegate.turnCount > 0), true);
+
+    controlWorld(world, 'mode', undefined, 'hybrid');
+    assert.equal(world.mode, 'hybrid');
+    await stepWorldWithProviders(world);
+    assert.equal(world.delegates.some((delegate) => delegate.lastProviderSource === 'fallback' && delegate.turnCount > 0), true);
+    assert.equal(validateGoldConservation(world), true);
+  } finally {
+    process.env.COMMUNION_MODE = previousMode;
+    if (previousWidth === undefined) delete process.env.FLOW_ACTORS_PER_TICK;
+    else process.env.FLOW_ACTORS_PER_TICK = previousWidth;
+    for (const [key, value] of Object.entries(previousKeys)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
   }
 });
 

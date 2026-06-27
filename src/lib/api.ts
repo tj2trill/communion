@@ -1,4 +1,4 @@
-import type { WorldState } from './types';
+import type { SimulationMode, WorldState } from './types';
 
 async function jsonRequest<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -18,6 +18,11 @@ export const api = {
     jsonRequest<{ ok: boolean; state: WorldState }>('/api/control', {
       method: 'POST',
       body: JSON.stringify({ action, speed })
+    }),
+  mode: (mode: SimulationMode) =>
+    jsonRequest<{ ok: boolean; state: WorldState }>('/api/control', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'mode', mode })
     }),
   scenario: (id: string) =>
     jsonRequest<{ ok: boolean; state: WorldState }>('/api/scenario', {

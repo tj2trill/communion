@@ -584,6 +584,16 @@
   to { transform: rotate(405deg); }
 }
 
+@media (max-width: 1380px) {
+  .provider-strip {
+    display: none;
+  }
+
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+}
+
 @media (max-width: 1180px) {
   .workspace {
     grid-template-columns: 320px minmax(420px, 1fr);
@@ -606,13 +616,20 @@
   html,
   body,
   #root {
-    overflow: auto;
+    overflow: hidden;
   }
 
   .app-shell {
-    min-height: 100%;
-    height: auto;
-    grid-template-rows: auto auto minmax(560px, 1fr) auto;
+    min-height: 100vh;
+    height: 100vh;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+
+  @supports (height: 100dvh) {
+    .app-shell {
+      min-height: 100dvh;
+      height: 100dvh;
+    }
   }
 
   .topbar {
@@ -646,7 +663,8 @@
 
   .workspace {
     grid-template-columns: 1fr;
-    grid-template-rows: 320px 560px;
+    grid-template-rows: minmax(220px, 34vh) minmax(0, 1fr);
+    min-height: 0;
   }
 
   .left-panel {

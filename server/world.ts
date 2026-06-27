@@ -1874,18 +1874,19 @@ export function addObserverPrompt(world: WorldState, text: string): WorldState {
   return recomputeWorld(world);
 }
 
-export function controlWorld(world: WorldState, action: 'run' | 'pause' | 'step' | 'reset' | 'speed', speed?: number): WorldState {
+export function controlWorld(world: WorldState, action: 'run' | 'pause' | 'step' | 'reset' | 'speed' | 'mode', speed?: number, mode?: SimulationMode): WorldState {
   if (action === 'reset') return createInitialWorld(world.seed);
   if (action === 'run') world.running = true;
   if (action === 'pause') world.running = false;
   if (action === 'speed') world.speed = clamp(speed ?? 1, 0.5, 8);
+  if (action === 'mode' && mode) world.mode = mode;
   if (action === 'step') stepWorld(world);
   return recomputeWorld(world);
 }
 
-export async function controlWorldAsync(world: WorldState, action: 'run' | 'pause' | 'step' | 'reset' | 'speed', speed?: number): Promise<WorldState> {
+export async function controlWorldAsync(world: WorldState, action: 'run' | 'pause' | 'step' | 'reset' | 'speed' | 'mode', speed?: number, mode?: SimulationMode): Promise<WorldState> {
   if (action === 'step') return stepWorldWithProviders(world);
-  return controlWorld(world, action, speed);
+  return controlWorld(world, action, speed, mode);
 }
 
 export function validateGoldConservation(world: WorldState): boolean {

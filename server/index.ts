@@ -31,8 +31,9 @@ const restoreState = process.env.RESTORE_STATE === 'true';
 const clients = new Set<Response>();
 
 const controlSchema = z.object({
-  action: z.enum(['run', 'pause', 'step', 'reset', 'speed']),
-  speed: z.number().min(0.5).max(8).optional()
+  action: z.enum(['run', 'pause', 'step', 'reset', 'speed', 'mode']),
+  speed: z.number().min(0.5).max(8).optional(),
+  mode: z.enum(['mock', 'hybrid', 'live']).optional()
 });
 
 const scenarioSchema = z.object({
@@ -99,12 +100,12 @@ app.get('/api/stream', (request, response) => {
 app.post('/api/control', async (request, response) => {
   const parsed = controlSchema.safeParse(request.body);
   if (!parsed.success) return response.status(400).send(parsed.error.issues.map((issue) => issue.message).join('; '));
-  if (parsed.data.action === 'reset' || parsed.data.action === 'step') {
+  if (parsed.data.action === 'reset' || parsed.data.action === 'step' || parsed.data.action === 'mode') {
     worldEpoch += 1;
     tickCounter = 0;
     pulseCounter = 0;
   }
-  world = await controlWorldAsync(world, parsed.data.action, parsed.data.speed);
+  world = await controlWorldAsync(world, parsed.data.action, parsed.data.speed, parsed.data.mode);
   await afterMutation(`control:${parsed.data.action}`);
   response.json({ ok: true, state: world });
 });
