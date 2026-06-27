@@ -1,0 +1,305 @@
+- generic [ref=e11]:
+  - banner [ref=e12]:
+    - generic [ref=e19]:
+      - heading "COMMUNION" [level=1] [ref=e20]
+      - paragraph [ref=e21]: Multi-model civilization laboratory
+    - generic [ref=e24]:
+      - strong [ref=e25]: SIMULATION PAUSED
+      - generic [ref=e26]: YEAR 2 · DAY 24 · TURN 24
+    - generic [ref=e27]:
+      - generic "claude-opus-4-8" [ref=e28]:
+        - generic [ref=e30]: ANTHROPIC
+        - generic [ref=e31]: mock
+      - generic "gpt-5" [ref=e32]:
+        - generic [ref=e34]: OPENAI
+        - generic [ref=e35]: mock
+      - generic "gemini-2.5-pro" [ref=e36]:
+        - generic [ref=e38]: GEMINI
+        - generic [ref=e39]: mock
+      - generic "grok-4" [ref=e40]:
+        - generic [ref=e42]: XAI
+        - generic [ref=e43]: mock
+    - generic [ref=e44]:
+      - button "Run" [ref=e45] [cursor=pointer]:
+        - img [ref=e46]
+      - button "Advance one delegate turn" [ref=e48] [cursor=pointer]:
+        - img [ref=e49]
+      - generic "Simulation speed" [ref=e51]:
+        - img [ref=e52]
+        - combobox [ref=e55] [cursor=pointer]:
+          - option "0.5×"
+          - option "1×" [selected]
+          - option "2×"
+          - option "4×"
+          - option "8×"
+      - button "Scenarios" [ref=e57] [cursor=pointer]:
+        - img [ref=e58]
+        - text: Scenarios
+        - img [ref=e60]
+      - button "Reset world" [ref=e62] [cursor=pointer]:
+        - img [ref=e63]
+      - button "Export state" [ref=e66] [cursor=pointer]:
+        - img [ref=e67]
+  - generic [ref=e70]:
+    - generic [ref=e71]:
+      - img [ref=e72]
+      - generic [ref=e76]: Population
+      - strong [ref=e77]: 320M
+    - generic [ref=e78]:
+      - img [ref=e79]
+      - generic [ref=e82]: GDP
+      - strong [ref=e83]: 15360000000.0T
+    - generic [ref=e84]:
+      - img [ref=e85]
+      - generic [ref=e88]: Fiat supply
+      - strong [ref=e89]: 7,040,000,000,000B
+    - generic [ref=e90]:
+      - img [ref=e91]
+      - generic [ref=e96]: Gold
+      - strong [ref=e97]: 5,460 Au
+    - generic [ref=e98]:
+      - img [ref=e99]
+      - generic [ref=e101]: Wars
+      - strong [ref=e102]: "1"
+    - generic [ref=e103]:
+      - img [ref=e104]
+      - generic [ref=e107]: Food security
+      - strong [ref=e108]: "71"
+    - generic [ref=e109]:
+      - img [ref=e110]
+      - generic [ref=e113]: Current delegate
+      - strong [ref=e114]: Claude
+  - main [ref=e115]:
+    - complementary [ref=e116]:
+      - navigation [ref=e117]:
+        - button "Nations" [ref=e118] [cursor=pointer]:
+          - img [ref=e119]
+          - generic [ref=e124]: Nations
+        - button "Hierarchy" [ref=e125] [cursor=pointer]:
+          - img [ref=e126]
+          - generic [ref=e130]: Hierarchy
+        - button "Economy" [ref=e131] [cursor=pointer]:
+          - img [ref=e132]
+          - generic [ref=e137]: Economy
+        - button "Conflict" [ref=e138] [cursor=pointer]:
+          - img [ref=e139]
+          - generic [ref=e141]: Conflict
+      - generic [ref=e142]:
+        - generic [ref=e143]:
+          - img [ref=e144]
+          - generic [ref=e149]:
+            - strong [ref=e150]: Four founding sovereign states
+            - generic [ref=e151]: Each model owns land, institutions, a fiat currency, and sovereign gold from genesis.
+        - generic [ref=e152]:
+          - button "Axiom Deliberative republic 58% 84M 4,032,000,000,000B WSU AXM 1,410 Au Constitutional pragmatism +2.4%" [ref=e153] [cursor=pointer]:
+            - generic [ref=e154]:
+              - generic [ref=e156]:
+                - strong [ref=e157]: Axiom
+                - generic [ref=e158]: Deliberative republic
+              - generic [ref=e159]: 58%
+            - generic [ref=e160]:
+              - generic [ref=e161]:
+                - img [ref=e162]
+                - text: 84M
+              - generic [ref=e166]:
+                - img [ref=e167]
+                - text: 4,032,000,000,000B WSU
+              - generic [ref=e170]:
+                - img [ref=e171]
+                - text: AXM
+              - generic [ref=e174]:
+                - img [ref=e175]
+                - text: 1,410 Au
+            - generic [ref=e180]:
+              - generic [ref=e181]: Constitutional pragmatism
+              - generic [ref=e182]: +2.4%
+          - button "Meridian Federal technocracy 58% 102M 4,896,000,000,000B WSU MRC 1,320 Au Technocratic growth +3.1%" [ref=e183] [cursor=pointer]:
+            - generic [ref=e184]:
+              - generic [ref=e186]:
+                - strong [ref=e187]: Meridian
+                - generic [ref=e188]: Federal technocracy
+              - generic [ref=e189]: 58%
+            - generic [ref=e190]:
+              - generic [ref=e191]:
+                - img [ref=e192]
+                - text: 102M
+              - generic [ref=e196]:
+                - img [ref=e197]
+                - text: 4,896,000,000,000B WSU
+              - generic [ref=e200]:
+                - img [ref=e201]
+                - text: MRC
+              - generic [ref=e204]:
+                - img [ref=e205]
+                - text: 1,320 Au
+            - generic [ref=e210]:
+              - generic [ref=e211]: Technocratic growth
+              - generic [ref=e212]: +3.1%
+          - button "Solara Parliamentary union 58% 76M 3,648,000,000,000B WSU SLR 1,470 Au Open cooperation +1.8%" [ref=e213] [cursor=pointer]:
+            - generic [ref=e214]:
+              - generic [ref=e216]:
+                - strong [ref=e217]: Solara
+                - generic [ref=e218]: Parliamentary union
+              - generic [ref=e219]: 58%
+            - generic [ref=e220]:
+              - generic [ref=e221]:
+                - img [ref=e222]
+                - text: 76M
+              - generic [ref=e226]:
+                - img [ref=e227]
+                - text: 3,648,000,000,000B WSU
+              - generic [ref=e230]:
+                - img [ref=e231]
+                - text: SLR
+              - generic [ref=e234]:
+                - img [ref=e235]
+                - text: 1,470 Au
+            - generic [ref=e240]:
+              - generic [ref=e241]: Open cooperation
+              - generic [ref=e242]: +1.8%
+          - button "Vantage Charter state 58% 58M 2,784,000,000,000B WSU VTB 1,260 Au Frontier libertarian +4.2%" [ref=e243] [cursor=pointer]:
+            - generic [ref=e244]:
+              - generic [ref=e246]:
+                - strong [ref=e247]: Vantage
+                - generic [ref=e248]: Charter state
+              - generic [ref=e249]: 58%
+            - generic [ref=e250]:
+              - generic [ref=e251]:
+                - img [ref=e252]
+                - text: 58M
+              - generic [ref=e256]:
+                - img [ref=e257]
+                - text: 2,784,000,000,000B WSU
+              - generic [ref=e260]:
+                - img [ref=e261]
+                - text: VTB
+              - generic [ref=e264]:
+                - img [ref=e265]
+                - text: 1,260 Au
+            - generic [ref=e270]:
+              - generic [ref=e271]: Frontier libertarian
+              - generic [ref=e272]: +4.2%
+        - generic [ref=e273]:
+          - heading "International order" [level=3] [ref=e274]
+          - generic [ref=e275]:
+            - generic [ref=e276]:
+              - strong [ref=e277]: World Assembly
+              - generic [ref=e278]: assembly · 4 members
+            - generic "62.0" [ref=e279]:
+              - generic [ref=e282]: "62"
+          - generic [ref=e283]:
+            - generic [ref=e284]:
+              - strong [ref=e285]: Global Reserve Board
+              - generic [ref=e286]: reserve · 4 members
+            - generic "58.0" [ref=e287]:
+              - generic [ref=e290]: "58"
+    - generic [ref=e291]:
+      - generic [ref=e292]:
+        - generic:
+          - generic:
+            - generic:
+              - strong: Axiom
+              - generic: AXM · 1410 Au
+        - generic:
+          - generic:
+            - generic:
+              - strong: Meridian
+              - generic: MRC · 1320 Au
+        - generic:
+          - generic:
+            - generic:
+              - strong: Solara
+              - generic: SLR · 1470 Au
+        - generic:
+          - generic:
+            - generic:
+              - strong: Vantage
+              - generic: VTB · 1260 Au
+      - generic [ref=e295]:
+        - button "Surface" [ref=e296] [cursor=pointer]:
+          - img [ref=e297]
+          - text: Surface
+        - button "Globe" [ref=e299] [cursor=pointer]:
+          - img [ref=e300]
+          - text: Globe
+      - generic [ref=e305]:
+        - strong [ref=e306]: Axiom
+        - generic [ref=e307]: "Preview civilization: four model states, one active conflict"
+      - generic [ref=e308]:
+        - generic [ref=e309]:
+          - img [ref=e310]
+          - text: AVATAR
+        - button "Exterior" [ref=e314] [cursor=pointer]:
+          - img [ref=e315]
+          - text: Exterior
+        - button "Skeleton" [ref=e318] [cursor=pointer]:
+          - img [ref=e319]
+          - text: Skeleton
+        - button "Organs" [ref=e321] [cursor=pointer]:
+          - img [ref=e322]
+          - text: Organs
+        - button "X-ray" [ref=e325] [cursor=pointer]:
+          - img [ref=e326]
+          - text: X-ray
+      - generic [ref=e331]:
+        - generic [ref=e332]:
+          - img [ref=e333]
+          - text: OVERLAY
+        - button "Political" [ref=e335] [cursor=pointer]
+        - button "Growth" [ref=e336] [cursor=pointer]
+        - button "Gold" [ref=e337] [cursor=pointer]
+        - button "Diplomacy" [ref=e338] [cursor=pointer]
+        - button "Conflict" [ref=e339] [cursor=pointer]
+      - generic [ref=e340]:
+        - generic [ref=e341]:
+          - img [ref=e342]
+          - generic [ref=e345]: NONBINDING OBSERVER CHANNEL
+        - textbox "Introduce a public question or scenario constraint…" [ref=e346]
+        - button "Send observer prompt" [disabled] [ref=e347]:
+          - img [ref=e348]
+    - complementary [ref=e351]:
+      - navigation [ref=e352]:
+        - button "Chat 3" [ref=e353] [cursor=pointer]:
+          - img [ref=e354]
+          - generic [ref=e357]: Chat
+          - generic [ref=e358]: "3"
+        - button "Decisions 1" [ref=e359] [cursor=pointer]:
+          - img [ref=e360]
+          - generic [ref=e362]: Decisions
+          - generic [ref=e363]: "1"
+        - button "Assembly 1" [ref=e364] [cursor=pointer]:
+          - img [ref=e365]
+          - generic [ref=e368]: Assembly
+          - generic [ref=e369]: "1"
+      - generic [ref=e370]:
+        - article [ref=e371]:
+          - generic [ref=e372]:
+            - text: G
+            - generic [ref=e373]:
+              - strong [ref=e374]: Gemini
+              - generic [ref=e375]: Solara · turn 24
+            - text: assembly
+          - paragraph [ref=e376]: Solara proposes neutral arbitration of the Meridian-Vantage dispute.
+          - generic [ref=e377]: propose policyresolve
+        - article [ref=e378]:
+          - generic [ref=e379]:
+            - text: G
+            - generic [ref=e380]:
+              - strong [ref=e381]: Grok
+              - generic [ref=e382]: Vantage · turn 23
+            - text: crisis
+          - paragraph [ref=e383]: Your sanctions are an act of economic war. Lift them or face mobilization.
+          - generic [ref=e384]: sanctionfear
+        - article [ref=e385]:
+          - generic [ref=e386]:
+            - text: C
+            - generic [ref=e387]:
+              - strong [ref=e388]: Claude
+              - generic [ref=e389]: Axiom · turn 23
+            - text: direct
+          - paragraph [ref=e390]: Concord holds. Shall we co-sponsor the reserve floor before Vantage moves?
+          - generic [ref=e391]: trade offertrust
+  - contentinfo [ref=e392]:
+    - generic [ref=e393]: "Contained simulation: no external tools or authority"
+    - generic [ref=e395]: Fiat and gold markets · institutional hierarchy · aggregate conflict effects · append-only audit
+    - generic [ref=e396]: "Preview mode: backend offline, showing mock civilization."

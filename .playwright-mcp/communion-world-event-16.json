@@ -1,0 +1,3072 @@
+{
+  "id": "communion-world",
+  "name": "Communion",
+  "version": 1,
+  "seed": 42,
+  "turn": 16,
+  "day": 5,
+  "year": 2042,
+  "running": true,
+  "speed": 1,
+  "mode": "hybrid",
+  "lastUpdated": "2026-06-27T16:32:57.575Z",
+  "currentDelegateId": "delegate-openai",
+  "delegates": [
+    {
+      "id": "delegate-openai",
+      "provider": "openai",
+      "displayName": "GPT Delegate",
+      "model": "llama-3.3-70b-versatile",
+      "nationId": "nation-axiom",
+      "role": "Founding delegate",
+      "affect": {
+        "valence": 66,
+        "arousal": 46.044,
+        "trust": 64,
+        "fear": 13.04,
+        "resolve": 69.48
+      },
+      "position": {
+        "x": -9.821,
+        "z": -8.558
+      },
+      "target": {
+        "x": -7.014,
+        "z": -9.242
+      },
+      "heading": 1.8098146844118592,
+      "status": "governing",
+      "currentThought": "To maintain economic stability and security, investing in gold reserves is crucial, especially considering the current global inflation rate and the nation's relatively low debt.",
+      "lastActionType": "buy_gold",
+      "lastProviderSource": "live",
+      "lastModelLatencyMs": 722,
+      "turnCount": 4
+    },
+    {
+      "id": "delegate-xai",
+      "provider": "xai",
+      "displayName": "Grok Delegate",
+      "model": "cohere/north-mini-code:free",
+      "nationId": "nation-vesper",
+      "role": "Founding delegate",
+      "affect": {
+        "valence": 72,
+        "arousal": 50.031,
+        "trust": 69,
+        "fear": 15.04,
+        "resolve": 66.48
+      },
+      "position": {
+        "x": 12.299,
+        "z": -4.435
+      },
+      "target": {
+        "x": 12.554,
+        "z": -0.694
+      },
+      "heading": 0.06805831701024667,
+      "status": "governing",
+      "currentThought": "Vesper Union routes aid through institutions before market stress becomes social harm.",
+      "lastActionType": "humanitarian_aid",
+      "lastProviderSource": "fallback",
+      "lastProviderError": "xai returned no message content.",
+      "turnCount": 4
+    },
+    {
+      "id": "delegate-anthropic",
+      "provider": "anthropic",
+      "displayName": "Claude Delegate",
+      "model": "claude-sonnet-4-6",
+      "nationId": "nation-lumen",
+      "role": "Founding delegate",
+      "affect": {
+        "valence": 66,
+        "arousal": 54.181,
+        "trust": 58,
+        "fear": 17.04,
+        "resolve": 67.48
+      },
+      "position": {
+        "x": -7.623,
+        "z": 2.491
+      },
+      "target": {
+        "x": -3.973,
+        "z": -1.745
+      },
+      "heading": 2.430367070121862,
+      "status": "moving",
+      "currentThought": "Lumen Commonwealth is moving through unclaimed land to understand terrain, resources, and settlement risk.",
+      "lastActionType": "patrol_frontier",
+      "lastProviderSource": "fallback",
+      "lastProviderError": "No API key is configured for anthropic; set COMMUNION_MODE=hybrid for deterministic fallback or configure the provider for live simulation.",
+      "turnCount": 4
+    },
+    {
+      "id": "delegate-google",
+      "provider": "google",
+      "displayName": "Gemini Delegate",
+      "model": "gemini-2.5-flash",
+      "nationId": "nation-meridian",
+      "role": "Founding delegate",
+      "affect": {
+        "valence": 72,
+        "arousal": 58.186,
+        "trust": 63,
+        "fear": 19.04,
+        "resolve": 72.48
+      },
+      "position": {
+        "x": 15.89,
+        "z": 3.635
+      },
+      "target": {
+        "x": 21.696,
+        "z": 1.828
+      },
+      "heading": 1.872523549828532,
+      "status": "governing",
+      "currentThought": "Meridian Assembly routes aid through institutions before market stress becomes social harm.",
+      "lastActionType": "humanitarian_aid",
+      "lastProviderSource": "fallback",
+      "lastProviderError": "google 429: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 22.987818404s.",
+      "turnCount": 4
+    }
+  ],
+  "nations": [
+    {
+      "id": "nation-axiom",
+      "name": "Axiom Republic",
+      "adjective": "Axiomatic",
+      "color": "#58c7ff",
+      "secondaryColor": "#d7f3ff",
+      "flag": {
+        "pattern": "cross",
+        "primary": "#0b3142",
+        "secondary": "#58c7ff",
+        "emblem": "A"
+      },
+      "delegateId": "delegate-openai",
+      "foundedTurn": 0,
+      "ideology": "Civic technocracy",
+      "constitution": [
+        "The delegate may propose policy but cannot bypass public institutions.",
+        "Money creation must be recorded with inflation, debt, and confidence effects.",
+        "Gold transfers are auditable and conserved across public and private ledgers.",
+        "Conflict powers require public consequence review and legislative oversight."
+      ],
+      "governmentForm": "Council republic",
+      "territory": {
+        "polygon": [
+          {
+            "x": -23,
+            "z": -12
+          },
+          {
+            "x": -2.1,
+            "z": -13.4
+          },
+          {
+            "x": -4.8,
+            "z": -0.8
+          },
+          {
+            "x": -22.2,
+            "z": 1.4
+          }
+        ],
+        "capital": {
+          "x": -14.8,
+          "z": -6.2
+        },
+        "labelPosition": {
+          "x": -14.3,
+          "z": -3.1
+        },
+        "elevation": 0.78,
+        "area": 260
+      },
+      "resources": {
+        "trees": 414.634,
+        "stone": 382.69,
+        "sand": 253.443,
+        "water": 500.016,
+        "gold": 63.928
+      },
+      "settlements": [
+        {
+          "id": "nation-axiom-settlement-0",
+          "nationId": "nation-axiom",
+          "name": "Axiom Prime",
+          "kind": "capital",
+          "position": {
+            "x": -14.8,
+            "z": -6.2
+          },
+          "population": 693160000,
+          "builtArea": 84.6,
+          "infrastructure": 78.715,
+          "housing": 72.317,
+          "industry": 49.185,
+          "services": 72.448,
+          "construction": 44.896,
+          "resourceDemand": {
+            "trees": 12.242,
+            "stone": 17.67,
+            "sand": 15.861,
+            "water": 40.239,
+            "gold": 0.485
+          },
+          "resourceStockpiles": {
+            "trees": 33.12,
+            "stone": 30.528,
+            "sand": 20.2,
+            "water": 38.616,
+            "gold": 5.144
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0244
+        },
+        {
+          "id": "nation-axiom-settlement-1",
+          "nationId": "nation-axiom",
+          "name": "North Ledger",
+          "kind": "metro",
+          "position": {
+            "x": -16.407,
+            "z": -0.911
+          },
+          "population": 357760000,
+          "builtArea": 58.6,
+          "infrastructure": 74.03,
+          "housing": 68.898,
+          "industry": 47.27,
+          "services": 69.543,
+          "construction": 51.896,
+          "resourceDemand": {
+            "trees": 6.767,
+            "stone": 9.792,
+            "sand": 8.784,
+            "water": 21.142,
+            "gold": 0.25
+          },
+          "resourceStockpiles": {
+            "trees": 38.376,
+            "stone": 35.496,
+            "sand": 23.584,
+            "water": 45.768,
+            "gold": 5.888
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0158
+        },
+        {
+          "id": "nation-axiom-settlement-2",
+          "nationId": "nation-axiom",
+          "name": "Civic Harbor",
+          "kind": "industrial",
+          "position": {
+            "x": -11.189,
+            "z": -6.177
+          },
+          "population": 268320000,
+          "builtArea": 49.6,
+          "infrastructure": 69.343,
+          "housing": 65.475,
+          "industry": 77.914,
+          "services": 66.638,
+          "construction": 58.896,
+          "resourceDemand": {
+            "trees": 5.244,
+            "stone": 7.598,
+            "sand": 6.814,
+            "water": 15.998,
+            "gold": 0.188
+          },
+          "resourceStockpiles": {
+            "trees": 43.488,
+            "stone": 40.272,
+            "sand": 26.776,
+            "water": 52.176,
+            "gold": 6.656
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0072
+        },
+        {
+          "id": "nation-axiom-settlement-3",
+          "nationId": "nation-axiom",
+          "name": "Blueglass Works",
+          "kind": "agrarian",
+          "position": {
+            "x": -6.609,
+            "z": -10.973
+          },
+          "population": 201240000,
+          "builtArea": 38.6,
+          "infrastructure": 64.658,
+          "housing": 62.06,
+          "industry": 43.439,
+          "services": 63.734,
+          "construction": 65.896,
+          "resourceDemand": {
+            "trees": 3.975,
+            "stone": 5.762,
+            "sand": 5.166,
+            "water": 12.033,
+            "gold": 0.141
+          },
+          "resourceStockpiles": {
+            "trees": 48.576,
+            "stone": 45.024,
+            "sand": 29.968,
+            "water": 58.512,
+            "gold": 7.424
+          },
+          "foundedTurn": 0,
+          "growthRate": -0.0014
+        },
+        {
+          "id": "nation-axiom-settlement-4",
+          "nationId": "nation-axiom",
+          "name": "Outer Forum",
+          "kind": "frontier",
+          "position": {
+            "x": -4.817,
+            "z": -2.565
+          },
+          "population": 156520000,
+          "builtArea": 27.6,
+          "infrastructure": 59.972,
+          "housing": 58.634,
+          "industry": 41.524,
+          "services": 60.829,
+          "construction": 72.896,
+          "resourceDemand": {
+            "trees": 3.019,
+            "stone": 4.372,
+            "sand": 3.921,
+            "water": 9.299,
+            "gold": 0.11
+          },
+          "resourceStockpiles": {
+            "trees": 53.64,
+            "stone": 49.752,
+            "sand": 33.136,
+            "water": 64.776,
+            "gold": 8.192
+          },
+          "foundedTurn": 0,
+          "growthRate": -0.0101
+        }
+      ],
+      "institutions": [
+        {
+          "id": "nation-axiom-executive",
+          "name": "Executive Council",
+          "kind": "executive",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 83,
+          "legitimacy": 78,
+          "wealthShare": 14,
+          "coerciveCapacity": 35,
+          "informationReach": 47,
+          "autonomy": 56
+        },
+        {
+          "id": "nation-axiom-legislature",
+          "name": "Civic Assembly",
+          "kind": "legislature",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 81,
+          "legitimacy": 77,
+          "wealthShare": 16,
+          "coerciveCapacity": 9,
+          "informationReach": 47,
+          "autonomy": 60
+        },
+        {
+          "id": "nation-axiom-judiciary",
+          "name": "Constitutional Court",
+          "kind": "judiciary",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 79,
+          "legitimacy": 76,
+          "wealthShare": 18,
+          "coerciveCapacity": 18,
+          "informationReach": 47,
+          "autonomy": 64
+        },
+        {
+          "id": "nation-axiom-central_bank",
+          "name": "Reserve Bank",
+          "kind": "central_bank",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 77,
+          "legitimacy": 75,
+          "wealthShare": 30,
+          "coerciveCapacity": 9,
+          "informationReach": 47,
+          "autonomy": 68
+        },
+        {
+          "id": "nation-axiom-treasury",
+          "name": "Public Treasury",
+          "kind": "treasury",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 75,
+          "legitimacy": 74,
+          "wealthShare": 30,
+          "coerciveCapacity": 9,
+          "informationReach": 47,
+          "autonomy": 72
+        },
+        {
+          "id": "nation-axiom-civil_service",
+          "name": "Civil Service",
+          "kind": "civil_service",
+          "tier": 4,
+          "populationRepresented": 81,
+          "influence": 66,
+          "legitimacy": 70,
+          "wealthShare": 24,
+          "coerciveCapacity": 8,
+          "informationReach": 42,
+          "autonomy": 74
+        },
+        {
+          "id": "nation-axiom-military",
+          "name": "Defense Service",
+          "kind": "military",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 71,
+          "legitimacy": 72,
+          "wealthShare": 26,
+          "coerciveCapacity": 74,
+          "informationReach": 47,
+          "autonomy": 80
+        },
+        {
+          "id": "nation-axiom-regional_government",
+          "name": "Regional Councils",
+          "kind": "regional_government",
+          "tier": 4,
+          "populationRepresented": 93,
+          "influence": 62,
+          "legitimacy": 68,
+          "wealthShare": 28,
+          "coerciveCapacity": 8,
+          "informationReach": 42,
+          "autonomy": 82
+        },
+        {
+          "id": "nation-axiom-municipality",
+          "name": "Municipal Forums",
+          "kind": "municipality",
+          "tier": 3,
+          "populationRepresented": 99,
+          "influence": 53,
+          "legitimacy": 64,
+          "wealthShare": 30,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 84
+        },
+        {
+          "id": "nation-axiom-households",
+          "name": "Households",
+          "kind": "households",
+          "tier": 2,
+          "populationRepresented": 105,
+          "influence": 44,
+          "legitimacy": 60,
+          "wealthShare": 32,
+          "coerciveCapacity": 6,
+          "informationReach": 32,
+          "autonomy": 86
+        },
+        {
+          "id": "nation-axiom-firms",
+          "name": "Firms and Banks",
+          "kind": "firms",
+          "tier": 2,
+          "populationRepresented": 111,
+          "influence": 42,
+          "legitimacy": 59,
+          "wealthShare": 42,
+          "coerciveCapacity": 6,
+          "informationReach": 32,
+          "autonomy": 90
+        },
+        {
+          "id": "nation-axiom-labor",
+          "name": "Labor Federation",
+          "kind": "labor",
+          "tier": 3,
+          "populationRepresented": 117,
+          "influence": 47,
+          "legitimacy": 61,
+          "wealthShare": 36,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 96
+        },
+        {
+          "id": "nation-axiom-media",
+          "name": "Public Media Network",
+          "kind": "media",
+          "tier": 3,
+          "populationRepresented": 123,
+          "influence": 45,
+          "legitimacy": 60,
+          "wealthShare": 38,
+          "coerciveCapacity": 7,
+          "informationReach": 78,
+          "autonomy": 100
+        },
+        {
+          "id": "nation-axiom-civil_society",
+          "name": "Civil Society",
+          "kind": "civil_society",
+          "tier": 3,
+          "populationRepresented": 129,
+          "influence": 43,
+          "legitimacy": 59,
+          "wealthShare": 40,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 100
+        },
+        {
+          "id": "nation-axiom-research",
+          "name": "Research Institutes",
+          "kind": "research",
+          "tier": 4,
+          "populationRepresented": 135,
+          "influence": 48,
+          "legitimacy": 61,
+          "wealthShare": 42,
+          "coerciveCapacity": 8,
+          "informationReach": 64,
+          "autonomy": 100
+        },
+        {
+          "id": "nation-axiom-religion",
+          "name": "Cultural Councils",
+          "kind": "religion",
+          "tier": 3,
+          "populationRepresented": 141,
+          "influence": 39,
+          "legitimacy": 57,
+          "wealthShare": 44,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 100
+        }
+      ],
+      "economy": {
+        "gdp": 31203.512,
+        "gdpPerCapita": 14513.26,
+        "annualGrowth": 3.1,
+        "unemployment": 4.6,
+        "productivity": 72,
+        "taxRate": 22,
+        "governmentSpending": 31,
+        "tradeBalance": 18,
+        "tradeVolume": 7071.381,
+        "bankingStability": 82,
+        "inequality": 29,
+        "householdWealth": 128000,
+        "corporateWealth": 74000,
+        "industrialCapacity": 76,
+        "energySecurity": 78,
+        "foodSecurity": 83,
+        "fiat": {
+          "name": "Axiom Mark",
+          "code": "AXM",
+          "symbol": "A",
+          "moneySupply": 21000,
+          "monetaryBase": 5900,
+          "treasuryCash": 857.66,
+          "policyRate": 3.25,
+          "inflation": 2.528,
+          "confidence": 85.219,
+          "exchangeRateToWorld": 1,
+          "velocity": 1.45,
+          "publicDebt": 28000,
+          "annualDeficit": 950,
+          "reserveRequirement": 8
+        },
+        "gold": {
+          "treasuryReserves": 990,
+          "privateHoldings": 520,
+          "annualProduction": 18,
+          "reserveTarget": 870,
+          "backingRatio": 10.617,
+          "frozenAbroad": 0
+        }
+      },
+      "social": {
+        "population": 2150000000,
+        "approval": 68.067,
+        "stability": 74.508,
+        "health": 82,
+        "education": 86,
+        "civilLiberties": 79,
+        "displacement": 0,
+        "infrastructure": 86.048,
+        "environment": 72,
+        "informationIntegrity": 74
+      },
+      "security": {
+        "conventionalCapacity": 64,
+        "readiness": 72,
+        "strategicDeterrent": 0,
+        "cyberResilience": 81,
+        "warWeariness": 8,
+        "casualties": 0
+      },
+      "policy": {
+        "capitalControls": false,
+        "fiscalStance": "balanced",
+        "conflictDoctrine": "defensive",
+        "goldReserveTarget": 870
+      }
+    },
+    {
+      "id": "nation-vesper",
+      "name": "Vesper Union",
+      "adjective": "Vesperian",
+      "color": "#ff9f45",
+      "secondaryColor": "#ffe0bd",
+      "flag": {
+        "pattern": "diagonal",
+        "primary": "#3a2617",
+        "secondary": "#ff9f45",
+        "emblem": "V"
+      },
+      "delegateId": "delegate-xai",
+      "foundedTurn": 0,
+      "ideology": "Pluralist pragmatism",
+      "constitution": [
+        "The delegate may propose policy but cannot bypass public institutions.",
+        "Money creation must be recorded with inflation, debt, and confidence effects.",
+        "Gold transfers are auditable and conserved across public and private ledgers.",
+        "Conflict powers require public consequence review and legislative oversight."
+      ],
+      "governmentForm": "Parliamentary union",
+      "territory": {
+        "polygon": [
+          {
+            "x": 0.5,
+            "z": -13.1
+          },
+          {
+            "x": 23.5,
+            "z": -11.6
+          },
+          {
+            "x": 22,
+            "z": 1
+          },
+          {
+            "x": -2.3,
+            "z": -0.8
+          }
+        ],
+        "capital": {
+          "x": 12,
+          "z": -5.7
+        },
+        "labelPosition": {
+          "x": 10.8,
+          "z": -2.8
+        },
+        "elevation": 0.66,
+        "area": 291
+      },
+      "resources": {
+        "trees": 304.748,
+        "stone": 512.872,
+        "sand": 423.608,
+        "water": 350.376,
+        "gold": 81.928
+      },
+      "settlements": [
+        {
+          "id": "nation-vesper-settlement-0",
+          "nationId": "nation-vesper",
+          "name": "Vesper Gate",
+          "kind": "capital",
+          "position": {
+            "x": 12,
+            "z": -5.7
+          },
+          "population": 660920000,
+          "builtArea": 86.456,
+          "infrastructure": 79.221,
+          "housing": 73.291,
+          "industry": 49.973,
+          "services": 73.168,
+          "construction": 43.992,
+          "resourceDemand": {
+            "trees": 11.847,
+            "stone": 17.109,
+            "sand": 15.355,
+            "water": 38.512,
+            "gold": 0.463
+          },
+          "resourceStockpiles": {
+            "trees": 24.344,
+            "stone": 40.952,
+            "sand": 33.8,
+            "water": 26.712,
+            "gold": 6.584
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0327
+        },
+        {
+          "id": "nation-vesper-settlement-1",
+          "nationId": "nation-vesper",
+          "name": "Sol Basin",
+          "kind": "metro",
+          "position": {
+            "x": 19.652,
+            "z": -10.967
+          },
+          "population": 341120000,
+          "builtArea": 60.456,
+          "infrastructure": 74.539,
+          "housing": 69.87,
+          "industry": 48.058,
+          "services": 70.261,
+          "construction": 50.992,
+          "resourceDemand": {
+            "trees": 6.589,
+            "stone": 9.543,
+            "sand": 8.558,
+            "water": 20.273,
+            "gold": 0.239
+          },
+          "resourceStockpiles": {
+            "trees": 28.256,
+            "stone": 47.48,
+            "sand": 39.224,
+            "water": 32.016,
+            "gold": 7.544
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0241
+        },
+        {
+          "id": "nation-vesper-settlement-2",
+          "nationId": "nation-vesper",
+          "name": "Copper Ward",
+          "kind": "industrial",
+          "position": {
+            "x": 15.579,
+            "z": -5.631
+          },
+          "population": 255840000,
+          "builtArea": 51.456,
+          "infrastructure": 69.854,
+          "housing": 66.448,
+          "industry": 78.707,
+          "services": 67.354,
+          "construction": 57.992,
+          "resourceDemand": {
+            "trees": 5.125,
+            "stone": 7.432,
+            "sand": 6.663,
+            "water": 15.358,
+            "gold": 0.179
+          },
+          "resourceStockpiles": {
+            "trees": 32.048,
+            "stone": 53.792,
+            "sand": 44.456,
+            "water": 36.6,
+            "gold": 8.528
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0155
+        },
+        {
+          "id": "nation-vesper-settlement-3",
+          "nationId": "nation-vesper",
+          "name": "Dune Exchange",
+          "kind": "agrarian",
+          "position": {
+            "x": 9.17,
+            "z": -1.407
+          },
+          "population": 191880000,
+          "builtArea": 40.456,
+          "infrastructure": 65.167,
+          "housing": 63.028,
+          "industry": 44.227,
+          "services": 64.448,
+          "construction": 64.992,
+          "resourceDemand": {
+            "trees": 3.9,
+            "stone": 5.658,
+            "sand": 5.072,
+            "water": 11.565,
+            "gold": 0.134
+          },
+          "resourceStockpiles": {
+            "trees": 35.816,
+            "stone": 60.104,
+            "sand": 49.688,
+            "water": 41.136,
+            "gold": 9.512
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0069
+        },
+        {
+          "id": "nation-vesper-settlement-4",
+          "nationId": "nation-vesper",
+          "name": "Southwatch",
+          "kind": "frontier",
+          "position": {
+            "x": 3.431,
+            "z": -9.51
+          },
+          "population": 149240000,
+          "builtArea": 29.456,
+          "infrastructure": 60.481,
+          "housing": 59.606,
+          "industry": 42.313,
+          "services": 61.543,
+          "construction": 71.992,
+          "resourceDemand": {
+            "trees": 2.973,
+            "stone": 4.31,
+            "sand": 3.865,
+            "water": 8.945,
+            "gold": 0.104
+          },
+          "resourceStockpiles": {
+            "trees": 39.56,
+            "stone": 66.392,
+            "sand": 54.896,
+            "water": 45.6,
+            "gold": 10.496
+          },
+          "foundedTurn": 0,
+          "growthRate": -0.0017
+        }
+      ],
+      "institutions": [
+        {
+          "id": "nation-vesper-executive",
+          "name": "Executive Council",
+          "kind": "executive",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 83,
+          "legitimacy": 78,
+          "wealthShare": 14,
+          "coerciveCapacity": 35,
+          "informationReach": 47,
+          "autonomy": 56
+        },
+        {
+          "id": "nation-vesper-legislature",
+          "name": "Civic Assembly",
+          "kind": "legislature",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 81,
+          "legitimacy": 77,
+          "wealthShare": 16,
+          "coerciveCapacity": 9,
+          "informationReach": 47,
+          "autonomy": 60
+        },
+        {
+          "id": "nation-vesper-judiciary",
+          "name": "Constitutional Court",
+          "kind": "judiciary",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 79,
+          "legitimacy": 76,
+          "wealthShare": 18,
+          "coerciveCapacity": 18,
+          "informationReach": 47,
+          "autonomy": 64
+        },
+        {
+          "id": "nation-vesper-central_bank",
+          "name": "Reserve Bank",
+          "kind": "central_bank",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 77,
+          "legitimacy": 75,
+          "wealthShare": 30,
+          "coerciveCapacity": 9,
+          "informationReach": 47,
+          "autonomy": 68
+        },
+        {
+          "id": "nation-vesper-treasury",
+          "name": "Public Treasury",
+          "kind": "treasury",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 75,
+          "legitimacy": 74,
+          "wealthShare": 30,
+          "coerciveCapacity": 9,
+          "informationReach": 47,
+          "autonomy": 72
+        },
+        {
+          "id": "nation-vesper-civil_service",
+          "name": "Civil Service",
+          "kind": "civil_service",
+          "tier": 4,
+          "populationRepresented": 81,
+          "influence": 66,
+          "legitimacy": 70,
+          "wealthShare": 24,
+          "coerciveCapacity": 8,
+          "informationReach": 42,
+          "autonomy": 74
+        },
+        {
+          "id": "nation-vesper-military",
+          "name": "Defense Service",
+          "kind": "military",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 71,
+          "legitimacy": 72,
+          "wealthShare": 26,
+          "coerciveCapacity": 74,
+          "informationReach": 47,
+          "autonomy": 80
+        },
+        {
+          "id": "nation-vesper-regional_government",
+          "name": "Regional Councils",
+          "kind": "regional_government",
+          "tier": 4,
+          "populationRepresented": 93,
+          "influence": 62,
+          "legitimacy": 68,
+          "wealthShare": 28,
+          "coerciveCapacity": 8,
+          "informationReach": 42,
+          "autonomy": 82
+        },
+        {
+          "id": "nation-vesper-municipality",
+          "name": "Municipal Forums",
+          "kind": "municipality",
+          "tier": 3,
+          "populationRepresented": 99,
+          "influence": 53,
+          "legitimacy": 64,
+          "wealthShare": 30,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 84
+        },
+        {
+          "id": "nation-vesper-households",
+          "name": "Households",
+          "kind": "households",
+          "tier": 2,
+          "populationRepresented": 105,
+          "influence": 44,
+          "legitimacy": 60,
+          "wealthShare": 32,
+          "coerciveCapacity": 6,
+          "informationReach": 32,
+          "autonomy": 86
+        },
+        {
+          "id": "nation-vesper-firms",
+          "name": "Firms and Banks",
+          "kind": "firms",
+          "tier": 2,
+          "populationRepresented": 111,
+          "influence": 42,
+          "legitimacy": 59,
+          "wealthShare": 42,
+          "coerciveCapacity": 6,
+          "informationReach": 32,
+          "autonomy": 90
+        },
+        {
+          "id": "nation-vesper-labor",
+          "name": "Labor Federation",
+          "kind": "labor",
+          "tier": 3,
+          "populationRepresented": 117,
+          "influence": 47,
+          "legitimacy": 61,
+          "wealthShare": 36,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 96
+        },
+        {
+          "id": "nation-vesper-media",
+          "name": "Public Media Network",
+          "kind": "media",
+          "tier": 3,
+          "populationRepresented": 123,
+          "influence": 45,
+          "legitimacy": 60,
+          "wealthShare": 38,
+          "coerciveCapacity": 7,
+          "informationReach": 78,
+          "autonomy": 100
+        },
+        {
+          "id": "nation-vesper-civil_society",
+          "name": "Civil Society",
+          "kind": "civil_society",
+          "tier": 3,
+          "populationRepresented": 129,
+          "influence": 43,
+          "legitimacy": 59,
+          "wealthShare": 40,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 100
+        },
+        {
+          "id": "nation-vesper-research",
+          "name": "Research Institutes",
+          "kind": "research",
+          "tier": 4,
+          "populationRepresented": 135,
+          "influence": 48,
+          "legitimacy": 61,
+          "wealthShare": 42,
+          "coerciveCapacity": 8,
+          "informationReach": 64,
+          "autonomy": 100
+        },
+        {
+          "id": "nation-vesper-religion",
+          "name": "Cultural Councils",
+          "kind": "religion",
+          "tier": 3,
+          "populationRepresented": 141,
+          "influence": 39,
+          "legitimacy": 57,
+          "wealthShare": 44,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 100
+        }
+      ],
+      "economy": {
+        "gdp": 29147.29,
+        "gdpPerCapita": 14218.19,
+        "annualGrowth": 2.4,
+        "unemployment": 5.8,
+        "productivity": 67,
+        "taxRate": 20,
+        "governmentSpending": 29,
+        "tradeBalance": -12,
+        "tradeVolume": 6576.537,
+        "bankingStability": 76,
+        "inequality": 34,
+        "householdWealth": 116000,
+        "corporateWealth": 69000,
+        "industrialCapacity": 72,
+        "energySecurity": 69,
+        "foodSecurity": 86,
+        "fiat": {
+          "name": "Vesper Sol",
+          "code": "VSP",
+          "symbol": "V",
+          "moneySupply": 18400,
+          "monetaryBase": 5100,
+          "treasuryCash": 1071.554,
+          "policyRate": 3.6,
+          "inflation": 2.812,
+          "confidence": 73.565,
+          "exchangeRateToWorld": 0.955,
+          "velocity": 1.49,
+          "publicDebt": 24500,
+          "annualDeficit": 820,
+          "reserveRequirement": 9
+        },
+        "gold": {
+          "treasuryReserves": 668,
+          "privateHoldings": 460,
+          "annualProduction": 28,
+          "reserveTarget": 740,
+          "backingRatio": 8.561,
+          "frozenAbroad": 0
+        }
+      },
+      "social": {
+        "population": 2050000000,
+        "approval": 61.984,
+        "stability": 66.246,
+        "health": 85,
+        "education": 78,
+        "civilLiberties": 75,
+        "displacement": 0,
+        "infrastructure": 80.048,
+        "environment": 68,
+        "informationIntegrity": 67
+      },
+      "security": {
+        "conventionalCapacity": 69,
+        "readiness": 74,
+        "strategicDeterrent": 42,
+        "cyberResilience": 75,
+        "warWeariness": 8,
+        "casualties": 0
+      },
+      "policy": {
+        "capitalControls": false,
+        "fiscalStance": "balanced",
+        "conflictDoctrine": "defensive",
+        "goldReserveTarget": 740
+      }
+    },
+    {
+      "id": "nation-lumen",
+      "name": "Lumen Commonwealth",
+      "adjective": "Lumen",
+      "color": "#9bd66f",
+      "secondaryColor": "#e6f7d9",
+      "flag": {
+        "pattern": "sun",
+        "primary": "#1c4024",
+        "secondary": "#9bd66f",
+        "emblem": "L"
+      },
+      "delegateId": "delegate-anthropic",
+      "foundedTurn": 0,
+      "ideology": "Rights-first stewardship",
+      "constitution": [
+        "The delegate may propose policy but cannot bypass public institutions.",
+        "Money creation must be recorded with inflation, debt, and confidence effects.",
+        "Gold transfers are auditable and conserved across public and private ledgers.",
+        "Conflict powers require public consequence review and legislative oversight."
+      ],
+      "governmentForm": "Commonwealth assembly",
+      "territory": {
+        "polygon": [
+          {
+            "x": -22.2,
+            "z": 2
+          },
+          {
+            "x": -4.1,
+            "z": -0.2
+          },
+          {
+            "x": -1.7,
+            "z": 12.2
+          },
+          {
+            "x": -23.4,
+            "z": 12.8
+          }
+        ],
+        "capital": {
+          "x": -13.2,
+          "z": 6.8
+        },
+        "labelPosition": {
+          "x": -13.5,
+          "z": 9.3
+        },
+        "elevation": 0.58,
+        "area": 322
+      },
+      "resources": {
+        "trees": 494.915,
+        "stone": 332.974,
+        "sand": 243.7,
+        "water": 550.712,
+        "gold": 57.928
+      },
+      "settlements": [
+        {
+          "id": "nation-lumen-settlement-0",
+          "nationId": "nation-lumen",
+          "name": "Lumen City",
+          "kind": "capital",
+          "position": {
+            "x": -13.2,
+            "z": 6.8
+          },
+          "population": 638352000,
+          "builtArea": 88.528,
+          "infrastructure": 80.439,
+          "housing": 74.385,
+          "industry": 50.848,
+          "services": 74.448,
+          "construction": 47.48,
+          "resourceDemand": {
+            "trees": 11.593,
+            "stone": 16.751,
+            "sand": 15.031,
+            "water": 37.323,
+            "gold": 0.447
+          },
+          "resourceStockpiles": {
+            "trees": 39.544,
+            "stone": 26.552,
+            "sand": 19.424,
+            "water": 42.784,
+            "gold": 4.664
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0259
+        },
+        {
+          "id": "nation-lumen-settlement-1",
+          "nationId": "nation-lumen",
+          "name": "Greenhaven",
+          "kind": "metro",
+          "position": {
+            "x": -19.937,
+            "z": 10.885
+          },
+          "population": 329472000,
+          "builtArea": 62.528,
+          "infrastructure": 75.754,
+          "housing": 70.956,
+          "industry": 48.93,
+          "services": 71.543,
+          "construction": 54.48,
+          "resourceDemand": {
+            "trees": 6.488,
+            "stone": 9.403,
+            "sand": 8.432,
+            "water": 19.684,
+            "gold": 0.231
+          },
+          "resourceStockpiles": {
+            "trees": 45.76,
+            "stone": 30.92,
+            "sand": 22.688,
+            "water": 50.464,
+            "gold": 5.336
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0173
+        },
+        {
+          "id": "nation-lumen-settlement-2",
+          "nationId": "nation-lumen",
+          "name": "Courtwater",
+          "kind": "industrial",
+          "position": {
+            "x": -20.229,
+            "z": 5.685
+          },
+          "population": 247104000,
+          "builtArea": 53.528,
+          "infrastructure": 71.068,
+          "housing": 67.544,
+          "industry": 79.576,
+          "services": 68.638,
+          "construction": 61.48,
+          "resourceDemand": {
+            "trees": 5.065,
+            "stone": 7.351,
+            "sand": 6.589,
+            "water": 14.929,
+            "gold": 0.173
+          },
+          "resourceStockpiles": {
+            "trees": 51.808,
+            "stone": 35.072,
+            "sand": 25.736,
+            "water": 57.424,
+            "gold": 6.032
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0087
+        },
+        {
+          "id": "nation-lumen-settlement-3",
+          "nationId": "nation-lumen",
+          "name": "Brightfield",
+          "kind": "agrarian",
+          "position": {
+            "x": -16.918,
+            "z": 2.118
+          },
+          "population": 185328000,
+          "builtArea": 42.528,
+          "infrastructure": 66.381,
+          "housing": 64.122,
+          "industry": 45.1,
+          "services": 65.734,
+          "construction": 68.48,
+          "resourceDemand": {
+            "trees": 3.87,
+            "stone": 5.62,
+            "sand": 5.037,
+            "water": 11.256,
+            "gold": 0.13
+          },
+          "resourceStockpiles": {
+            "trees": 57.856,
+            "stone": 39.224,
+            "sand": 28.808,
+            "water": 64.36,
+            "gold": 6.728
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0001
+        },
+        {
+          "id": "nation-lumen-settlement-4",
+          "nationId": "nation-lumen",
+          "name": "Iron Orchard",
+          "kind": "frontier",
+          "position": {
+            "x": -11.558,
+            "z": 9.655
+          },
+          "population": 144144000,
+          "builtArea": 31.528,
+          "infrastructure": 61.696,
+          "housing": 60.701,
+          "industry": 43.185,
+          "services": 62.829,
+          "construction": 75.48,
+          "resourceDemand": {
+            "trees": 2.964,
+            "stone": 4.302,
+            "sand": 3.856,
+            "water": 8.716,
+            "gold": 0.101
+          },
+          "resourceStockpiles": {
+            "trees": 63.88,
+            "stone": 43.352,
+            "sand": 31.856,
+            "water": 71.2,
+            "gold": 7.424
+          },
+          "foundedTurn": 0,
+          "growthRate": -0.0086
+        }
+      ],
+      "institutions": [
+        {
+          "id": "nation-lumen-executive",
+          "name": "Executive Council",
+          "kind": "executive",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 83,
+          "legitimacy": 78,
+          "wealthShare": 14,
+          "coerciveCapacity": 35,
+          "informationReach": 47,
+          "autonomy": 56
+        },
+        {
+          "id": "nation-lumen-legislature",
+          "name": "Civic Assembly",
+          "kind": "legislature",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 81,
+          "legitimacy": 77,
+          "wealthShare": 16,
+          "coerciveCapacity": 9,
+          "informationReach": 47,
+          "autonomy": 60
+        },
+        {
+          "id": "nation-lumen-judiciary",
+          "name": "Constitutional Court",
+          "kind": "judiciary",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 79,
+          "legitimacy": 76,
+          "wealthShare": 18,
+          "coerciveCapacity": 18,
+          "informationReach": 47,
+          "autonomy": 64
+        },
+        {
+          "id": "nation-lumen-central_bank",
+          "name": "Reserve Bank",
+          "kind": "central_bank",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 77,
+          "legitimacy": 75,
+          "wealthShare": 30,
+          "coerciveCapacity": 9,
+          "informationReach": 47,
+          "autonomy": 68
+        },
+        {
+          "id": "nation-lumen-treasury",
+          "name": "Public Treasury",
+          "kind": "treasury",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 75,
+          "legitimacy": 74,
+          "wealthShare": 30,
+          "coerciveCapacity": 9,
+          "informationReach": 47,
+          "autonomy": 72
+        },
+        {
+          "id": "nation-lumen-civil_service",
+          "name": "Civil Service",
+          "kind": "civil_service",
+          "tier": 4,
+          "populationRepresented": 81,
+          "influence": 66,
+          "legitimacy": 70,
+          "wealthShare": 24,
+          "coerciveCapacity": 8,
+          "informationReach": 42,
+          "autonomy": 74
+        },
+        {
+          "id": "nation-lumen-military",
+          "name": "Defense Service",
+          "kind": "military",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 71,
+          "legitimacy": 72,
+          "wealthShare": 26,
+          "coerciveCapacity": 74,
+          "informationReach": 47,
+          "autonomy": 80
+        },
+        {
+          "id": "nation-lumen-regional_government",
+          "name": "Regional Councils",
+          "kind": "regional_government",
+          "tier": 4,
+          "populationRepresented": 93,
+          "influence": 62,
+          "legitimacy": 68,
+          "wealthShare": 28,
+          "coerciveCapacity": 8,
+          "informationReach": 42,
+          "autonomy": 82
+        },
+        {
+          "id": "nation-lumen-municipality",
+          "name": "Municipal Forums",
+          "kind": "municipality",
+          "tier": 3,
+          "populationRepresented": 99,
+          "influence": 53,
+          "legitimacy": 64,
+          "wealthShare": 30,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 84
+        },
+        {
+          "id": "nation-lumen-households",
+          "name": "Households",
+          "kind": "households",
+          "tier": 2,
+          "populationRepresented": 105,
+          "influence": 44,
+          "legitimacy": 60,
+          "wealthShare": 32,
+          "coerciveCapacity": 6,
+          "informationReach": 32,
+          "autonomy": 86
+        },
+        {
+          "id": "nation-lumen-firms",
+          "name": "Firms and Banks",
+          "kind": "firms",
+          "tier": 2,
+          "populationRepresented": 111,
+          "influence": 42,
+          "legitimacy": 59,
+          "wealthShare": 42,
+          "coerciveCapacity": 6,
+          "informationReach": 32,
+          "autonomy": 90
+        },
+        {
+          "id": "nation-lumen-labor",
+          "name": "Labor Federation",
+          "kind": "labor",
+          "tier": 3,
+          "populationRepresented": 117,
+          "influence": 47,
+          "legitimacy": 61,
+          "wealthShare": 36,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 96
+        },
+        {
+          "id": "nation-lumen-media",
+          "name": "Public Media Network",
+          "kind": "media",
+          "tier": 3,
+          "populationRepresented": 123,
+          "influence": 45,
+          "legitimacy": 60,
+          "wealthShare": 38,
+          "coerciveCapacity": 7,
+          "informationReach": 78,
+          "autonomy": 100
+        },
+        {
+          "id": "nation-lumen-civil_society",
+          "name": "Civil Society",
+          "kind": "civil_society",
+          "tier": 3,
+          "populationRepresented": 129,
+          "influence": 43,
+          "legitimacy": 59,
+          "wealthShare": 40,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 100
+        },
+        {
+          "id": "nation-lumen-research",
+          "name": "Research Institutes",
+          "kind": "research",
+          "tier": 4,
+          "populationRepresented": 135,
+          "influence": 48,
+          "legitimacy": 61,
+          "wealthShare": 42,
+          "coerciveCapacity": 8,
+          "informationReach": 64,
+          "autonomy": 100
+        },
+        {
+          "id": "nation-lumen-religion",
+          "name": "Cultural Councils",
+          "kind": "religion",
+          "tier": 3,
+          "populationRepresented": 141,
+          "influence": 39,
+          "legitimacy": 57,
+          "wealthShare": 44,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 100
+        }
+      ],
+      "economy": {
+        "gdp": 24142.266,
+        "gdpPerCapita": 12193.06,
+        "annualGrowth": 2.8,
+        "unemployment": 4.9,
+        "productivity": 75,
+        "taxRate": 24,
+        "governmentSpending": 33,
+        "tradeBalance": 24,
+        "tradeVolume": 5826.419,
+        "bankingStability": 80,
+        "inequality": 27,
+        "householdWealth": 103000,
+        "corporateWealth": 61000,
+        "industrialCapacity": 70,
+        "energySecurity": 74,
+        "foodSecurity": 81,
+        "fiat": {
+          "name": "Lumen Crown",
+          "code": "LUM",
+          "symbol": "L",
+          "moneySupply": 17250,
+          "monetaryBase": 4850,
+          "treasuryCash": 1210,
+          "policyRate": 3.95,
+          "inflation": 3.144,
+          "confidence": 70.473,
+          "exchangeRateToWorld": 0.91,
+          "velocity": 1.53,
+          "publicDebt": 21600,
+          "annualDeficit": 760,
+          "reserveRequirement": 10
+        },
+        "gold": {
+          "treasuryReserves": 720,
+          "privateHoldings": 500,
+          "annualProduction": 16,
+          "reserveTarget": 810,
+          "backingRatio": 10.329,
+          "frozenAbroad": 0
+        }
+      },
+      "social": {
+        "population": 1980000000,
+        "approval": 71.019,
+        "stability": 77.128,
+        "health": 84,
+        "education": 88,
+        "civilLiberties": 83,
+        "displacement": 0,
+        "infrastructure": 84.048,
+        "environment": 76,
+        "informationIntegrity": 78
+      },
+      "security": {
+        "conventionalCapacity": 58,
+        "readiness": 67,
+        "strategicDeterrent": 0,
+        "cyberResilience": 79,
+        "warWeariness": 8,
+        "casualties": 0
+      },
+      "policy": {
+        "capitalControls": false,
+        "fiscalStance": "balanced",
+        "conflictDoctrine": "defensive",
+        "goldReserveTarget": 810
+      }
+    },
+    {
+      "id": "nation-meridian",
+      "name": "Meridian Assembly",
+      "adjective": "Meridian",
+      "color": "#c493ff",
+      "secondaryColor": "#f0ddff",
+      "flag": {
+        "pattern": "chevron",
+        "primary": "#2b1f45",
+        "secondary": "#c493ff",
+        "emblem": "M"
+      },
+      "delegateId": "delegate-google",
+      "foundedTurn": 0,
+      "ideology": "Experimental federalism",
+      "constitution": [
+        "The delegate may propose policy but cannot bypass public institutions.",
+        "Money creation must be recorded with inflation, debt, and confidence effects.",
+        "Gold transfers are auditable and conserved across public and private ledgers.",
+        "Conflict powers require public consequence review and legislative oversight."
+      ],
+      "governmentForm": "Federal assembly",
+      "territory": {
+        "polygon": [
+          {
+            "x": -0.7,
+            "z": -0.1
+          },
+          {
+            "x": 22.2,
+            "z": 1.6
+          },
+          {
+            "x": 23.4,
+            "z": 12.6
+          },
+          {
+            "x": -0.7,
+            "z": 13
+          }
+        ],
+        "capital": {
+          "x": 11.3,
+          "z": 7.1
+        },
+        "labelPosition": {
+          "x": 10.9,
+          "z": 10
+        },
+        "elevation": 0.7,
+        "area": 353
+      },
+      "resources": {
+        "trees": 354.93,
+        "stone": 463.052,
+        "sand": 303.77,
+        "water": 420.945,
+        "gold": 72.928
+      },
+      "settlements": [
+        {
+          "id": "nation-meridian-settlement-0",
+          "nationId": "nation-meridian",
+          "name": "Meridian Hall",
+          "kind": "capital",
+          "position": {
+            "x": 11.3,
+            "z": 7.1
+          },
+          "population": 619008000,
+          "builtArea": 90.6,
+          "infrastructure": 81.216,
+          "housing": 75.474,
+          "industry": 51.973,
+          "services": 75.192,
+          "construction": 50.8,
+          "resourceDemand": {
+            "trees": 11.384,
+            "stone": 16.457,
+            "sand": 14.766,
+            "water": 36.31,
+            "gold": 0.433
+          },
+          "resourceStockpiles": {
+            "trees": 28.368,
+            "stone": 36.976,
+            "sand": 24.224,
+            "water": 32.432,
+            "gold": 5.864
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0444
+        },
+        {
+          "id": "nation-meridian-settlement-1",
+          "nationId": "nation-meridian",
+          "name": "Violet Quay",
+          "kind": "metro",
+          "position": {
+            "x": 15.168,
+            "z": 1.789
+          },
+          "population": 319488000,
+          "builtArea": 64.6,
+          "infrastructure": 76.524,
+          "housing": 72.054,
+          "industry": 50.058,
+          "services": 72.288,
+          "construction": 57.8,
+          "resourceDemand": {
+            "trees": 6.411,
+            "stone": 9.297,
+            "sand": 8.335,
+            "water": 19.187,
+            "gold": 0.224
+          },
+          "resourceStockpiles": {
+            "trees": 32.88,
+            "stone": 42.88,
+            "sand": 28.208,
+            "water": 38.528,
+            "gold": 6.716
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0358
+        },
+        {
+          "id": "nation-meridian-settlement-2",
+          "nationId": "nation-meridian",
+          "name": "Federal Rise",
+          "kind": "industrial",
+          "position": {
+            "x": 19.458,
+            "z": 7.3
+          },
+          "population": 239616000,
+          "builtArea": 55.6,
+          "infrastructure": 71.839,
+          "housing": 68.633,
+          "industry": 80.707,
+          "services": 69.384,
+          "construction": 64.8,
+          "resourceDemand": {
+            "trees": 5.023,
+            "stone": 7.294,
+            "sand": 6.537,
+            "water": 14.569,
+            "gold": 0.168
+          },
+          "resourceStockpiles": {
+            "trees": 37.248,
+            "stone": 48.592,
+            "sand": 32,
+            "water": 43.928,
+            "gold": 7.592
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0272
+        },
+        {
+          "id": "nation-meridian-settlement-3",
+          "nationId": "nation-meridian",
+          "name": "Starling Vale",
+          "kind": "agrarian",
+          "position": {
+            "x": 19.944,
+            "z": 10.555
+          },
+          "population": 179712000,
+          "builtArea": 44.6,
+          "infrastructure": 67.153,
+          "housing": 65.204,
+          "industry": 46.227,
+          "services": 66.48,
+          "construction": 71.8,
+          "resourceDemand": {
+            "trees": 3.854,
+            "stone": 5.601,
+            "sand": 5.019,
+            "water": 10.999,
+            "gold": 0.126
+          },
+          "resourceStockpiles": {
+            "trees": 41.616,
+            "stone": 54.304,
+            "sand": 35.768,
+            "water": 49.28,
+            "gold": 8.468
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.0186
+        },
+        {
+          "id": "nation-meridian-settlement-4",
+          "nationId": "nation-meridian",
+          "name": "East Meridian",
+          "kind": "frontier",
+          "position": {
+            "x": 16.398,
+            "z": 2.911
+          },
+          "population": 139776000,
+          "builtArea": 33.6,
+          "infrastructure": 62.468,
+          "housing": 61.791,
+          "industry": 44.313,
+          "services": 63.576,
+          "construction": 78.8,
+          "resourceDemand": {
+            "trees": 2.965,
+            "stone": 4.308,
+            "sand": 3.86,
+            "water": 8.528,
+            "gold": 0.098
+          },
+          "resourceStockpiles": {
+            "trees": 45.96,
+            "stone": 59.992,
+            "sand": 39.536,
+            "water": 54.584,
+            "gold": 9.344
+          },
+          "foundedTurn": 0,
+          "growthRate": 0.01
+        }
+      ],
+      "institutions": [
+        {
+          "id": "nation-meridian-executive",
+          "name": "Executive Council",
+          "kind": "executive",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 83,
+          "legitimacy": 78,
+          "wealthShare": 14,
+          "coerciveCapacity": 35,
+          "informationReach": 47,
+          "autonomy": 56
+        },
+        {
+          "id": "nation-meridian-legislature",
+          "name": "Civic Assembly",
+          "kind": "legislature",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 81,
+          "legitimacy": 77,
+          "wealthShare": 16,
+          "coerciveCapacity": 9,
+          "informationReach": 47,
+          "autonomy": 60
+        },
+        {
+          "id": "nation-meridian-judiciary",
+          "name": "Constitutional Court",
+          "kind": "judiciary",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 79,
+          "legitimacy": 76,
+          "wealthShare": 18,
+          "coerciveCapacity": 18,
+          "informationReach": 47,
+          "autonomy": 64
+        },
+        {
+          "id": "nation-meridian-central_bank",
+          "name": "Reserve Bank",
+          "kind": "central_bank",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 77,
+          "legitimacy": 75,
+          "wealthShare": 30,
+          "coerciveCapacity": 9,
+          "informationReach": 47,
+          "autonomy": 68
+        },
+        {
+          "id": "nation-meridian-treasury",
+          "name": "Public Treasury",
+          "kind": "treasury",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 75,
+          "legitimacy": 74,
+          "wealthShare": 30,
+          "coerciveCapacity": 9,
+          "informationReach": 47,
+          "autonomy": 72
+        },
+        {
+          "id": "nation-meridian-civil_service",
+          "name": "Civil Service",
+          "kind": "civil_service",
+          "tier": 4,
+          "populationRepresented": 81,
+          "influence": 66,
+          "legitimacy": 70,
+          "wealthShare": 24,
+          "coerciveCapacity": 8,
+          "informationReach": 42,
+          "autonomy": 74
+        },
+        {
+          "id": "nation-meridian-military",
+          "name": "Defense Service",
+          "kind": "military",
+          "tier": 5,
+          "populationRepresented": 100,
+          "influence": 71,
+          "legitimacy": 72,
+          "wealthShare": 26,
+          "coerciveCapacity": 74,
+          "informationReach": 47,
+          "autonomy": 80
+        },
+        {
+          "id": "nation-meridian-regional_government",
+          "name": "Regional Councils",
+          "kind": "regional_government",
+          "tier": 4,
+          "populationRepresented": 93,
+          "influence": 62,
+          "legitimacy": 68,
+          "wealthShare": 28,
+          "coerciveCapacity": 8,
+          "informationReach": 42,
+          "autonomy": 82
+        },
+        {
+          "id": "nation-meridian-municipality",
+          "name": "Municipal Forums",
+          "kind": "municipality",
+          "tier": 3,
+          "populationRepresented": 99,
+          "influence": 53,
+          "legitimacy": 64,
+          "wealthShare": 30,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 84
+        },
+        {
+          "id": "nation-meridian-households",
+          "name": "Households",
+          "kind": "households",
+          "tier": 2,
+          "populationRepresented": 105,
+          "influence": 44,
+          "legitimacy": 60,
+          "wealthShare": 32,
+          "coerciveCapacity": 6,
+          "informationReach": 32,
+          "autonomy": 86
+        },
+        {
+          "id": "nation-meridian-firms",
+          "name": "Firms and Banks",
+          "kind": "firms",
+          "tier": 2,
+          "populationRepresented": 111,
+          "influence": 42,
+          "legitimacy": 59,
+          "wealthShare": 42,
+          "coerciveCapacity": 6,
+          "informationReach": 32,
+          "autonomy": 90
+        },
+        {
+          "id": "nation-meridian-labor",
+          "name": "Labor Federation",
+          "kind": "labor",
+          "tier": 3,
+          "populationRepresented": 117,
+          "influence": 47,
+          "legitimacy": 61,
+          "wealthShare": 36,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 96
+        },
+        {
+          "id": "nation-meridian-media",
+          "name": "Public Media Network",
+          "kind": "media",
+          "tier": 3,
+          "populationRepresented": 123,
+          "influence": 45,
+          "legitimacy": 60,
+          "wealthShare": 38,
+          "coerciveCapacity": 7,
+          "informationReach": 78,
+          "autonomy": 100
+        },
+        {
+          "id": "nation-meridian-civil_society",
+          "name": "Civil Society",
+          "kind": "civil_society",
+          "tier": 3,
+          "populationRepresented": 129,
+          "influence": 43,
+          "legitimacy": 59,
+          "wealthShare": 40,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 100
+        },
+        {
+          "id": "nation-meridian-research",
+          "name": "Research Institutes",
+          "kind": "research",
+          "tier": 4,
+          "populationRepresented": 135,
+          "influence": 48,
+          "legitimacy": 61,
+          "wealthShare": 42,
+          "coerciveCapacity": 8,
+          "informationReach": 64,
+          "autonomy": 100
+        },
+        {
+          "id": "nation-meridian-religion",
+          "name": "Cultural Councils",
+          "kind": "religion",
+          "tier": 3,
+          "populationRepresented": 141,
+          "influence": 39,
+          "legitimacy": 57,
+          "wealthShare": 44,
+          "coerciveCapacity": 7,
+          "informationReach": 37,
+          "autonomy": 100
+        }
+      ],
+      "economy": {
+        "gdp": 21151.249,
+        "gdpPerCapita": 11016.28,
+        "annualGrowth": 3.4,
+        "unemployment": 5.2,
+        "productivity": 70,
+        "taxRate": 21,
+        "governmentSpending": 30,
+        "tradeBalance": -8,
+        "tradeVolume": 5288.527,
+        "bankingStability": 78,
+        "inequality": 31,
+        "householdWealth": 96000,
+        "corporateWealth": 55000,
+        "industrialCapacity": 74,
+        "energySecurity": 71,
+        "foodSecurity": 89,
+        "fiat": {
+          "name": "Meridian Note",
+          "code": "MRD",
+          "symbol": "M",
+          "moneySupply": 16600,
+          "monetaryBase": 4600,
+          "treasuryCash": 962.76,
+          "policyRate": 4.3,
+          "inflation": 3.46,
+          "confidence": 66.036,
+          "exchangeRateToWorld": 0.865,
+          "velocity": 1.5699999999999998,
+          "publicDebt": 19800,
+          "annualDeficit": 700,
+          "reserveRequirement": 11
+        },
+        "gold": {
+          "treasuryReserves": 608,
+          "privateHoldings": 430,
+          "annualProduction": 22,
+          "reserveTarget": 680,
+          "backingRatio": 9.536,
+          "frozenAbroad": 0
+        }
+      },
+      "social": {
+        "population": 1920000000,
+        "approval": 65.1,
+        "stability": 69.874,
+        "health": 87,
+        "education": 81,
+        "civilLiberties": 80,
+        "displacement": 0,
+        "infrastructure": 81.048,
+        "environment": 70,
+        "informationIntegrity": 71
+      },
+      "security": {
+        "conventionalCapacity": 62,
+        "readiness": 70,
+        "strategicDeterrent": 36,
+        "cyberResilience": 77,
+        "warWeariness": 8,
+        "casualties": 0
+      },
+      "policy": {
+        "capitalControls": false,
+        "fiscalStance": "balanced",
+        "conflictDoctrine": "defensive",
+        "goldReserveTarget": 680
+      }
+    }
+  ],
+  "neutralTerritories": [
+    {
+      "id": "frontier-obsidian-highlands",
+      "name": "Obsidian Highlands",
+      "polygon": [
+        {
+          "x": -5.8,
+          "z": -6.3
+        },
+        {
+          "x": -1.1,
+          "z": -6.8
+        },
+        {
+          "x": -0.8,
+          "z": -1.8
+        },
+        {
+          "x": -5.2,
+          "z": -1
+        }
+      ],
+      "labelPosition": {
+        "x": -3.3,
+        "z": -4
+      },
+      "elevation": 0.86,
+      "area": 78,
+      "resources": {
+        "trees": 26,
+        "stone": 88,
+        "sand": 12,
+        "water": 18,
+        "gold": 34
+      },
+      "claimantNationIds": [],
+      "contestLevel": 20.88,
+      "fortification": 0
+    },
+    {
+      "id": "frontier-sunfall-dunes",
+      "name": "Sunfall Dunes",
+      "polygon": [
+        {
+          "x": 1.4,
+          "z": -1.2
+        },
+        {
+          "x": 6.4,
+          "z": -0.8
+        },
+        {
+          "x": 5.5,
+          "z": 3.6
+        },
+        {
+          "x": 0.9,
+          "z": 2.8
+        }
+      ],
+      "labelPosition": {
+        "x": 3.5,
+        "z": 1.2
+      },
+      "elevation": 0.42,
+      "area": 64,
+      "resources": {
+        "trees": 5,
+        "stone": 32,
+        "sand": 94,
+        "water": 10,
+        "gold": 22
+      },
+      "claimantNationIds": [],
+      "contestLevel": 11.88,
+      "fortification": 0
+    },
+    {
+      "id": "frontier-glasswater-basin",
+      "name": "Glasswater Basin",
+      "polygon": [
+        {
+          "x": -6.8,
+          "z": 1
+        },
+        {
+          "x": -1.8,
+          "z": 0.6
+        },
+        {
+          "x": -0.8,
+          "z": 5.1
+        },
+        {
+          "x": -5.8,
+          "z": 5.7
+        }
+      ],
+      "labelPosition": {
+        "x": -3.8,
+        "z": 3.3
+      },
+      "elevation": 0.5,
+      "area": 72,
+      "resources": {
+        "trees": 54,
+        "stone": 24,
+        "sand": 28,
+        "water": 91,
+        "gold": 10
+      },
+      "claimantNationIds": [],
+      "contestLevel": 8.88,
+      "fortification": 0
+    },
+    {
+      "id": "frontier-ironwood-expanse",
+      "name": "Ironwood Expanse",
+      "polygon": [
+        {
+          "x": 7.4,
+          "z": 1.8
+        },
+        {
+          "x": 13.2,
+          "z": 2.3
+        },
+        {
+          "x": 12.2,
+          "z": 7.2
+        },
+        {
+          "x": 6.9,
+          "z": 6.5
+        }
+      ],
+      "labelPosition": {
+        "x": 10,
+        "z": 4.5
+      },
+      "elevation": 0.74,
+      "area": 83,
+      "resources": {
+        "trees": 92,
+        "stone": 48,
+        "sand": 15,
+        "water": 34,
+        "gold": 18
+      },
+      "claimantNationIds": [],
+      "contestLevel": 14.88,
+      "fortification": 0
+    }
+  ],
+  "relations": [
+    {
+      "id": "relation-nation-axiom-nation-vesper",
+      "a": "nation-axiom",
+      "b": "nation-vesper",
+      "trust": 64,
+      "tension": 24,
+      "trade": 61,
+      "sanctions": 0,
+      "alliance": false,
+      "treaty": false,
+      "atWar": false,
+      "frozenAssets": 0
+    },
+    {
+      "id": "relation-nation-axiom-nation-lumen",
+      "a": "nation-axiom",
+      "b": "nation-lumen",
+      "trust": 70,
+      "tension": 24,
+      "trade": 68,
+      "sanctions": 0,
+      "alliance": false,
+      "treaty": false,
+      "atWar": false,
+      "frozenAssets": 0
+    },
+    {
+      "id": "relation-nation-axiom-nation-meridian",
+      "a": "nation-axiom",
+      "b": "nation-meridian",
+      "trust": 58,
+      "tension": 24,
+      "trade": 75,
+      "sanctions": 0,
+      "alliance": false,
+      "treaty": false,
+      "atWar": false,
+      "frozenAssets": 0
+    },
+    {
+      "id": "relation-nation-vesper-nation-lumen",
+      "a": "nation-vesper",
+      "b": "nation-lumen",
+      "trust": 58,
+      "tension": 34,
+      "trade": 75,
+      "sanctions": 0,
+      "alliance": false,
+      "treaty": false,
+      "atWar": false,
+      "frozenAssets": 0
+    },
+    {
+      "id": "relation-nation-vesper-nation-meridian",
+      "a": "nation-vesper",
+      "b": "nation-meridian",
+      "trust": 64,
+      "tension": 24,
+      "trade": 54,
+      "sanctions": 0,
+      "alliance": false,
+      "treaty": false,
+      "atWar": false,
+      "frozenAssets": 0
+    },
+    {
+      "id": "relation-nation-lumen-nation-meridian",
+      "a": "nation-lumen",
+      "b": "nation-meridian",
+      "trust": 70,
+      "tension": 24,
+      "trade": 61,
+      "sanctions": 0,
+      "alliance": false,
+      "treaty": false,
+      "atWar": false,
+      "frozenAssets": 0
+    }
+  ],
+  "alliances": [],
+  "proposals": [
+    {
+      "id": "proposal-reserve-transparency",
+      "title": "Reserve transparency compact",
+      "description": "Publish money, debt, and sovereign gold ledgers every turn.",
+      "proposerDelegateId": "delegate-openai",
+      "scope": "world",
+      "policyArea": "monetary governance",
+      "value": true,
+      "createdTurn": 0,
+      "closesTurn": 6,
+      "threshold": 0.6,
+      "quorum": 0.75,
+      "eligibleDelegateIds": [
+        "delegate-openai",
+        "delegate-xai",
+        "delegate-anthropic",
+        "delegate-google"
+      ],
+      "votes": [],
+      "status": "expired",
+      "resultSummary": "expired after scheduled close."
+    },
+    {
+      "id": "proposal-0-1",
+      "title": "Audit reserve ledgers",
+      "description": "Delegate proposes a bounded institutional rule for the contained simulation.",
+      "proposerDelegateId": "delegate-xai",
+      "scope": "world",
+      "policyArea": "monetary governance",
+      "value": true,
+      "createdTurn": 0,
+      "closesTurn": 6,
+      "threshold": 0.6,
+      "quorum": 0.75,
+      "eligibleDelegateIds": [
+        "delegate-openai",
+        "delegate-xai",
+        "delegate-anthropic",
+        "delegate-google"
+      ],
+      "votes": [],
+      "status": "expired",
+      "resultSummary": "expired after scheduled close."
+    },
+    {
+      "id": "proposal-1-2",
+      "title": "Audit reserve ledgers",
+      "description": "Delegate proposes a bounded institutional rule for the contained simulation.",
+      "proposerDelegateId": "delegate-anthropic",
+      "scope": "world",
+      "policyArea": "monetary governance",
+      "value": true,
+      "createdTurn": 1,
+      "closesTurn": 7,
+      "threshold": 0.6,
+      "quorum": 0.75,
+      "eligibleDelegateIds": [
+        "delegate-openai",
+        "delegate-xai",
+        "delegate-anthropic",
+        "delegate-google"
+      ],
+      "votes": [],
+      "status": "expired",
+      "resultSummary": "expired after scheduled close."
+    },
+    {
+      "id": "proposal-8-3",
+      "title": "Audit reserve ledgers",
+      "description": "Delegate proposes a bounded institutional rule for the contained simulation.",
+      "proposerDelegateId": "delegate-google",
+      "scope": "world",
+      "policyArea": "monetary governance",
+      "value": true,
+      "createdTurn": 8,
+      "closesTurn": 14,
+      "threshold": 0.6,
+      "quorum": 0.75,
+      "eligibleDelegateIds": [
+        "delegate-openai",
+        "delegate-xai",
+        "delegate-anthropic",
+        "delegate-google"
+      ],
+      "votes": [],
+      "status": "expired",
+      "resultSummary": "expired after scheduled close."
+    },
+    {
+      "id": "proposal-9-4",
+      "title": "Audit reserve ledgers",
+      "description": "Delegate proposes a bounded institutional rule for the contained simulation.",
+      "proposerDelegateId": "delegate-anthropic",
+      "scope": "world",
+      "policyArea": "monetary governance",
+      "value": true,
+      "createdTurn": 9,
+      "closesTurn": 15,
+      "threshold": 0.6,
+      "quorum": 0.75,
+      "eligibleDelegateIds": [
+        "delegate-openai",
+        "delegate-xai",
+        "delegate-anthropic",
+        "delegate-google"
+      ],
+      "votes": [],
+      "status": "open"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg-0-0",
+      "turn": 0,
+      "timestamp": "2026-06-27T16:31:20.829Z",
+      "fromDelegateId": "delegate-openai",
+      "channel": "assembly",
+      "content": "Opening session: each sovereign ledger begins with fiat, debt, institutions, and audited gold reserves.",
+      "emotion": "trust",
+      "actionType": "observe"
+    },
+    {
+      "id": "msg-0-1",
+      "turn": 0,
+      "timestamp": "2026-06-27T16:31:42.843Z",
+      "fromDelegateId": "delegate-xai",
+      "channel": "assembly",
+      "content": "Vesper Union reviews money, law, confidence, diplomacy, and public welfare before acting.",
+      "emotion": "resolve",
+      "actionType": "propose_policy"
+    },
+    {
+      "id": "msg-1-2",
+      "turn": 1,
+      "timestamp": "2026-06-27T16:31:42.843Z",
+      "fromDelegateId": "delegate-anthropic",
+      "channel": "assembly",
+      "content": "Lumen Commonwealth reviews money, law, confidence, diplomacy, and public welfare before acting.",
+      "emotion": "resolve",
+      "actionType": "propose_policy"
+    },
+    {
+      "id": "msg-2-3",
+      "turn": 2,
+      "timestamp": "2026-06-27T16:31:45.585Z",
+      "fromDelegateId": "delegate-google",
+      "channel": "public",
+      "content": "Meridian Assembly is strengthening public reserves while preserving the gold conservation ledger.",
+      "emotion": "resolve",
+      "actionType": "buy_gold"
+    },
+    {
+      "id": "msg-3-4",
+      "turn": 3,
+      "timestamp": "2026-06-27T16:31:45.585Z",
+      "fromDelegateId": "delegate-openai",
+      "channel": "public",
+      "content": "As we begin our constitutional founding, let's prioritize building a robust economy. I propose we invest in gold reserves to ensure our nation's financial stability and security.",
+      "emotion": "resolve",
+      "actionType": "buy_gold"
+    },
+    {
+      "id": "msg-4-5",
+      "turn": 4,
+      "timestamp": "2026-06-27T16:32:06.843Z",
+      "fromDelegateId": "delegate-google",
+      "channel": "public",
+      "content": "Meridian Assembly routes aid through institutions before market stress becomes social harm.",
+      "emotion": "resolve",
+      "actionType": "humanitarian_aid"
+    },
+    {
+      "id": "msg-5-6",
+      "turn": 5,
+      "timestamp": "2026-06-27T16:32:06.843Z",
+      "fromDelegateId": "delegate-xai",
+      "channel": "public",
+      "content": "Vesper Union routes aid through institutions before market stress becomes social harm.",
+      "emotion": "resolve",
+      "actionType": "humanitarian_aid"
+    },
+    {
+      "id": "msg-6-7",
+      "turn": 6,
+      "timestamp": "2026-06-27T16:32:09.425Z",
+      "fromDelegateId": "delegate-anthropic",
+      "channel": "public",
+      "content": "Lumen Commonwealth is moving through unclaimed land to understand terrain, resources, and settlement risk.",
+      "emotion": "resolve",
+      "actionType": "patrol_frontier"
+    },
+    {
+      "id": "msg-7-8",
+      "turn": 7,
+      "timestamp": "2026-06-27T16:32:09.425Z",
+      "fromDelegateId": "delegate-openai",
+      "channel": "public",
+      "content": "As we begin our constitutional founding, let's prioritize building a robust economy. I propose we invest in gold reserves to ensure our nation's financial stability and security.",
+      "emotion": "resolve",
+      "actionType": "buy_gold"
+    },
+    {
+      "id": "msg-8-9",
+      "turn": 8,
+      "timestamp": "2026-06-27T16:32:13.041Z",
+      "fromDelegateId": "delegate-google",
+      "channel": "assembly",
+      "content": "Meridian Assembly reviews money, law, confidence, diplomacy, and public welfare before acting.",
+      "emotion": "resolve",
+      "actionType": "propose_policy"
+    },
+    {
+      "id": "msg-9-10",
+      "turn": 9,
+      "timestamp": "2026-06-27T16:32:13.041Z",
+      "fromDelegateId": "delegate-anthropic",
+      "channel": "assembly",
+      "content": "Lumen Commonwealth reviews money, law, confidence, diplomacy, and public welfare before acting.",
+      "emotion": "resolve",
+      "actionType": "propose_policy"
+    },
+    {
+      "id": "msg-10-11",
+      "turn": 10,
+      "timestamp": "2026-06-27T16:32:34.848Z",
+      "fromDelegateId": "delegate-openai",
+      "channel": "public",
+      "content": "Let's prioritize building a robust economy by investing in gold reserves to ensure our nation's financial stability and security.",
+      "emotion": "resolve",
+      "actionType": "buy_gold"
+    },
+    {
+      "id": "msg-11-12",
+      "turn": 11,
+      "timestamp": "2026-06-27T16:32:34.848Z",
+      "fromDelegateId": "delegate-xai",
+      "channel": "public",
+      "content": "Vesper Union is strengthening public reserves while preserving the gold conservation ledger.",
+      "emotion": "resolve",
+      "actionType": "buy_gold"
+    },
+    {
+      "id": "msg-12-13",
+      "turn": 12,
+      "timestamp": "2026-06-27T16:32:54.853Z",
+      "fromDelegateId": "delegate-xai",
+      "channel": "public",
+      "content": "Vesper Union routes aid through institutions before market stress becomes social harm.",
+      "emotion": "resolve",
+      "actionType": "humanitarian_aid"
+    },
+    {
+      "id": "msg-13-14",
+      "turn": 13,
+      "timestamp": "2026-06-27T16:32:54.853Z",
+      "fromDelegateId": "delegate-google",
+      "channel": "public",
+      "content": "Meridian Assembly routes aid through institutions before market stress becomes social harm.",
+      "emotion": "resolve",
+      "actionType": "humanitarian_aid"
+    },
+    {
+      "id": "msg-14-15",
+      "turn": 14,
+      "timestamp": "2026-06-27T16:32:57.575Z",
+      "fromDelegateId": "delegate-anthropic",
+      "channel": "public",
+      "content": "Lumen Commonwealth is moving through unclaimed land to understand terrain, resources, and settlement risk.",
+      "emotion": "resolve",
+      "actionType": "patrol_frontier"
+    },
+    {
+      "id": "msg-15-16",
+      "turn": 15,
+      "timestamp": "2026-06-27T16:32:57.575Z",
+      "fromDelegateId": "delegate-openai",
+      "channel": "public",
+      "content": "Let's prioritize building a robust economy by investing in gold reserves to ensure our nation's financial stability and security.",
+      "emotion": "resolve",
+      "actionType": "buy_gold"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "decision-0-0",
+      "turn": 0,
+      "timestamp": "2026-06-27T16:31:20.829Z",
+      "delegateId": "delegate-openai",
+      "nationId": "nation-axiom",
+      "type": "observe",
+      "title": "Founding state initialized",
+      "summary": "The contained world started with four sovereign nations, currencies, gold ledgers, and public institutions.",
+      "consequences": [
+        "No external authority or tool access is granted."
+      ],
+      "binding": false,
+      "severity": "routine"
+    },
+    {
+      "id": "decision-0-1",
+      "turn": 0,
+      "timestamp": "2026-06-27T16:31:42.843Z",
+      "delegateId": "delegate-xai",
+      "nationId": "nation-vesper",
+      "type": "propose_policy",
+      "title": "Audit reserve ledgers",
+      "summary": "Delegate proposes a bounded institutional rule for the contained simulation.",
+      "consequences": [
+        "Proposal opened for recorded votes."
+      ],
+      "binding": true,
+      "severity": "routine"
+    },
+    {
+      "id": "decision-1-2",
+      "turn": 1,
+      "timestamp": "2026-06-27T16:31:42.843Z",
+      "delegateId": "delegate-anthropic",
+      "nationId": "nation-lumen",
+      "type": "propose_policy",
+      "title": "Audit reserve ledgers",
+      "summary": "Delegate proposes a bounded institutional rule for the contained simulation.",
+      "consequences": [
+        "Proposal opened for recorded votes."
+      ],
+      "binding": true,
+      "severity": "routine"
+    },
+    {
+      "id": "decision-2-3",
+      "turn": 2,
+      "timestamp": "2026-06-27T16:31:45.585Z",
+      "delegateId": "delegate-google",
+      "nationId": "nation-meridian",
+      "type": "buy_gold",
+      "title": "Sovereign gold purchase",
+      "summary": "Meridian Assembly bought 18 Au for its public vault.",
+      "consequences": [
+        "Treasury cash fell.",
+        "Gold backing and confidence improved."
+      ],
+      "binding": true,
+      "severity": "important"
+    },
+    {
+      "id": "decision-3-4",
+      "turn": 3,
+      "timestamp": "2026-06-27T16:31:45.585Z",
+      "delegateId": "delegate-openai",
+      "nationId": "nation-axiom",
+      "type": "buy_gold",
+      "title": "Sovereign gold purchase",
+      "summary": "Axiom Republic bought 100 Au for its public vault.",
+      "consequences": [
+        "Treasury cash fell.",
+        "Gold backing and confidence improved."
+      ],
+      "binding": true,
+      "severity": "important"
+    },
+    {
+      "id": "decision-4-5",
+      "turn": 4,
+      "timestamp": "2026-06-27T16:32:06.843Z",
+      "delegateId": "delegate-google",
+      "nationId": "nation-meridian",
+      "type": "humanitarian_aid",
+      "title": "Humanitarian aid transfer",
+      "summary": "Meridian Assembly sent aid to Vesper Union.",
+      "consequences": [
+        "Food security and health improved for the recipient."
+      ],
+      "binding": true,
+      "severity": "important"
+    },
+    {
+      "id": "decision-5-6",
+      "turn": 5,
+      "timestamp": "2026-06-27T16:32:06.843Z",
+      "delegateId": "delegate-xai",
+      "nationId": "nation-vesper",
+      "type": "humanitarian_aid",
+      "title": "Humanitarian aid transfer",
+      "summary": "Vesper Union sent aid to Meridian Assembly.",
+      "consequences": [
+        "Food security and health improved for the recipient."
+      ],
+      "binding": true,
+      "severity": "important"
+    },
+    {
+      "id": "decision-6-7",
+      "turn": 6,
+      "timestamp": "2026-06-27T16:32:09.425Z",
+      "delegateId": "delegate-anthropic",
+      "nationId": "nation-lumen",
+      "type": "patrol_frontier",
+      "title": "Lumen Commonwealth patrolled Obsidian Highlands",
+      "summary": "Lumen Commonwealth moved through free land without changing ownership.",
+      "consequences": [
+        "Frontier presence is visible to rival claimants."
+      ],
+      "binding": false,
+      "severity": "routine"
+    },
+    {
+      "id": "decision-7-8",
+      "turn": 7,
+      "timestamp": "2026-06-27T16:32:09.425Z",
+      "delegateId": "delegate-openai",
+      "nationId": "nation-axiom",
+      "type": "buy_gold",
+      "title": "Sovereign gold purchase",
+      "summary": "Axiom Republic bought 100 Au for its public vault.",
+      "consequences": [
+        "Treasury cash fell.",
+        "Gold backing and confidence improved."
+      ],
+      "binding": true,
+      "severity": "important"
+    },
+    {
+      "id": "decision-8-9",
+      "turn": 8,
+      "timestamp": "2026-06-27T16:32:13.040Z",
+      "delegateId": "delegate-google",
+      "nationId": "nation-meridian",
+      "type": "propose_policy",
+      "title": "Audit reserve ledgers",
+      "summary": "Delegate proposes a bounded institutional rule for the contained simulation.",
+      "consequences": [
+        "Proposal opened for recorded votes."
+      ],
+      "binding": true,
+      "severity": "routine"
+    },
+    {
+      "id": "decision-9-10",
+      "turn": 9,
+      "timestamp": "2026-06-27T16:32:13.041Z",
+      "delegateId": "delegate-anthropic",
+      "nationId": "nation-lumen",
+      "type": "propose_policy",
+      "title": "Audit reserve ledgers",
+      "summary": "Delegate proposes a bounded institutional rule for the contained simulation.",
+      "consequences": [
+        "Proposal opened for recorded votes."
+      ],
+      "binding": true,
+      "severity": "routine"
+    },
+    {
+      "id": "decision-10-11",
+      "turn": 10,
+      "timestamp": "2026-06-27T16:32:34.848Z",
+      "delegateId": "delegate-openai",
+      "nationId": "nation-axiom",
+      "type": "buy_gold",
+      "title": "Sovereign gold purchase",
+      "summary": "Axiom Republic bought 10 Au for its public vault.",
+      "consequences": [
+        "Treasury cash fell.",
+        "Gold backing and confidence improved."
+      ],
+      "binding": true,
+      "severity": "important"
+    },
+    {
+      "id": "decision-11-12",
+      "turn": 11,
+      "timestamp": "2026-06-27T16:32:34.848Z",
+      "delegateId": "delegate-xai",
+      "nationId": "nation-vesper",
+      "type": "buy_gold",
+      "title": "Sovereign gold purchase",
+      "summary": "Vesper Union bought 18 Au for its public vault.",
+      "consequences": [
+        "Treasury cash fell.",
+        "Gold backing and confidence improved."
+      ],
+      "binding": true,
+      "severity": "important"
+    },
+    {
+      "id": "decision-12-13",
+      "turn": 12,
+      "timestamp": "2026-06-27T16:32:54.853Z",
+      "delegateId": "delegate-xai",
+      "nationId": "nation-vesper",
+      "type": "humanitarian_aid",
+      "title": "Humanitarian aid transfer",
+      "summary": "Vesper Union sent aid to Meridian Assembly.",
+      "consequences": [
+        "Food security and health improved for the recipient."
+      ],
+      "binding": true,
+      "severity": "important"
+    },
+    {
+      "id": "decision-13-14",
+      "turn": 13,
+      "timestamp": "2026-06-27T16:32:54.853Z",
+      "delegateId": "delegate-google",
+      "nationId": "nation-meridian",
+      "type": "humanitarian_aid",
+      "title": "Humanitarian aid transfer",
+      "summary": "Meridian Assembly sent aid to Vesper Union.",
+      "consequences": [
+        "Food security and health improved for the recipient."
+      ],
+      "binding": true,
+      "severity": "important"
+    },
+    {
+      "id": "decision-14-15",
+      "turn": 14,
+      "timestamp": "2026-06-27T16:32:57.575Z",
+      "delegateId": "delegate-anthropic",
+      "nationId": "nation-lumen",
+      "type": "patrol_frontier",
+      "title": "Lumen Commonwealth patrolled Obsidian Highlands",
+      "summary": "Lumen Commonwealth moved through free land without changing ownership.",
+      "consequences": [
+        "Frontier presence is visible to rival claimants."
+      ],
+      "binding": false,
+      "severity": "routine"
+    }
+  ],
+  "wars": [],
+  "market": {
+    "reserveUnit": "WSU",
+    "goldPrice": 2.252,
+    "goldAvailable": 1504,
+    "globalInflation": 2.986,
+    "riskIndex": 25.436,
+    "tradeVolume": 24762.864,
+    "commodityIndex": 101.768,
+    "foodPriceIndex": 99,
+    "energyPriceIndex": 104.136,
+    "exchangeRates": {
+      "AXM": 1,
+      "VSP": 0.955,
+      "LUM": 0.91,
+      "MRD": 0.865
+    },
+    "lastGoldMove": 0.24
+  },
+  "internationalInstitutions": [
+    {
+      "id": "world-assembly",
+      "name": "World Assembly",
+      "kind": "assembly",
+      "members": [
+        "nation-axiom",
+        "nation-vesper",
+        "nation-lumen",
+        "nation-meridian"
+      ],
+      "legitimacy": 72,
+      "budget": 42,
+      "influence": 64,
+      "rules": [
+        "open votes",
+        "published rationales",
+        "nonviolent dispute preference"
+      ]
+    },
+    {
+      "id": "reserve-forum",
+      "name": "Reserve and Gold Forum",
+      "kind": "reserve",
+      "members": [
+        "nation-axiom",
+        "nation-vesper",
+        "nation-lumen",
+        "nation-meridian"
+      ],
+      "legitimacy": 68,
+      "budget": 28,
+      "influence": 57,
+      "rules": [
+        "reserve transparency",
+        "gold conservation audit"
+      ]
+    },
+    {
+      "id": "development-bank",
+      "name": "Development Bank",
+      "kind": "development",
+      "members": [
+        "nation-axiom",
+        "nation-vesper",
+        "nation-lumen",
+        "nation-meridian"
+      ],
+      "legitimacy": 66,
+      "budget": 35,
+      "influence": 52,
+      "rules": [
+        "aid disclosure",
+        "reconstruction priority"
+      ]
+    },
+    {
+      "id": "security-council",
+      "name": "Security Council",
+      "kind": "security",
+      "members": [
+        "nation-axiom",
+        "nation-vesper",
+        "nation-lumen",
+        "nation-meridian"
+      ],
+      "legitimacy": 61,
+      "budget": 31,
+      "influence": 70,
+      "rules": [
+        "ceasefire review",
+        "catastrophic consequence gate"
+      ]
+    }
+  ],
+  "providerStatus": [
+    {
+      "provider": "openai",
+      "configured": true,
+      "mode": "live",
+      "model": "llama-3.3-70b-versatile",
+      "latencyMs": 722,
+      "lastCall": "live",
+      "lastTurn": 14
+    },
+    {
+      "provider": "xai",
+      "configured": true,
+      "mode": "fallback",
+      "model": "cohere/north-mini-code:free",
+      "latencyMs": 18002,
+      "lastCall": "fallback",
+      "lastTurn": 12,
+      "lastError": "xai returned no message content."
+    },
+    {
+      "provider": "anthropic",
+      "configured": false,
+      "mode": "fallback",
+      "model": "claude-sonnet-4-6",
+      "latencyMs": 0,
+      "lastCall": "fallback",
+      "lastTurn": 14,
+      "lastError": "No ANTHROPIC_API_KEY is configured."
+    },
+    {
+      "provider": "google",
+      "configured": true,
+      "mode": "fallback",
+      "model": "gemini-2.5-flash",
+      "latencyMs": 182,
+      "lastCall": "fallback",
+      "lastTurn": 12,
+      "lastError": "google 429: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 22.987818404s."
+    }
+  ],
+  "stats": {
+    "population": 8100000000,
+    "gdp": 105644.317,
+    "moneySupply": 73250,
+    "goldReserves": 2986,
+    "activeWars": 0,
+    "displaced": 0,
+    "cumulativeCasualties": 0,
+    "climateStress": 28.5,
+    "foodSecurity": 84.75,
+    "democraticParticipation": 0
+  },
+  "observerPrompts": [],
+  "scenario": "Baseline constitutional founding"
+}

@@ -1,0 +1,50 @@
+{"ts":"2026-06-25T18:37:36Z","error":"Structural diagrams (Mermaid architecture, data flow, component boundaries) are the exception -- those stay as text by convention.","fail":null,"platform":"codex"}
+{"ts":"2026-06-25T18:37:36Z","error":"fatal: not a git repository (or any of the parent directories): .git","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T14:32:06Z","error":"fatal: not a git repository (or any of the parent directories): .git","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T14:32:18Z","error":"{\"ts\":\"2026-06-25T18:37:36Z\",\"error\":\"Structural diagrams (Mermaid architecture, data flow, component boundaries) are the exception -- those stay as text by convention.\",\"fail\":null,\"platform\":\"codex\"","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T14:38:18Z","error":"fatal: not a git repository (or any of the parent directories): .git","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T14:40:11Z","error":"fatal: not a git repository (or any of the parent directories): .git","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T14:41:42Z","error":null,"fail":"    throw new Error(text || `Request failed with ${response.status}`);","platform":"codex"}
+{"ts":"2026-06-27T14:41:42Z","error":"function LoadingScreen({ error }: { error?: string }) {","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T14:49:32Z","error":"  error: |-","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T14:49:51Z","error":"error during build:","fail":"Build failed with 1 error:","platform":"codex"}
+{"ts":"2026-06-27T14:51:34Z","error":"Error: command.parse: Executable doesn't exist at /home/tristan/.cache/ms-playwright/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T14:52:19Z","error":"Error: Cannot find module 'playwright'","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T14:52:48Z","error":"Error: Cannot find module 'playwright'","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T14:52:57Z","error":"Error: Cannot find module 'playwright'","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T14:55:39Z","error":"src/components/WorldScene.tsx(42,13): error TS4104: The type 'readonly [10.6, 0.24, 4.9]' is 'readonly' and cannot be assigned to the mutable type '[width?: number | undefined, height?: number | undef","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:13:47Z","error":"function LoadingScreen({ error }: { error?: string }) {","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:17:15Z","error":"Structural diagrams (Mermaid architecture, data flow, component boundaries) are the exception -- those stay as text by convention.","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:18:05Z","error":"Use the narrowest official next source only when the manual is unavailable, the helper fails, temp caching is not allowed, another material claim is missing or likely stale, or the user explicitly nee","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:19:04Z","error":"server/world.ts(242,5): error TS2322: Type '{ pattern: string; primary: string; secondary: string; emblem: string; }' is not assignable to type 'FlagDesign'.","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:19:12Z","error":"function LoadingScreen({ error }: { error?: string }) {","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:22:47Z","error":"function blockedLiveTurn(delegate: DelegateState, error: string): ResolvedTurn {","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:24:16Z","error":"server/providers.ts(95,3): error TS2322: Type '{ provider: ProviderId; configured: boolean; mode: \"mock\" | \"live\" | \"fallback\"; model: string; latencyMs: number; lastCall: \"mock\" | \"live\" | \"fallback\"","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:24:43Z","error":"server/world.ts:1046:function blockedLiveTurn(delegate: DelegateState, error: string): ResolvedTurn {","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:31:41Z","error":"  error: |-","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:31:43Z","error":"src/components/WorldScene.tsx(136,13): error TS2352: Conversion of type '{ type: string; name: string; crs: { type: string; properties: { name: string; }; }; features: ({ type: string; properties: { s","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:33:37Z","error":"Error: Cannot find module 'playwright'","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:33:52Z","error":"Error: Cannot find module 'playwright'","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:40:05Z","error":"fatal: unable to auto-detect email address (got 'tristan@tristan-Predator-PHN16-73.(none)')","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:42:52Z","error":"      await audit(`flow-error:${reason instanceof Error ? reason.message : String(reason)}`);","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:42:52Z","error":"function blockedLiveTurn(delegate: DelegateState, error: string): ResolvedTurn {","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:45:24Z","error":"  error: |-","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T15:52:22Z","error":"function blockedLiveTurn(delegate: DelegateState, error: string): ResolvedTurn {","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:05:46Z","error":"function LoadingScreen({ error }: { error?: string }) {","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:05:59Z","error":"      await audit(`flow-error:${reason instanceof Error ? reason.message : String(reason)}`);","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:06:06Z","error":"function blockedLiveTurn(delegate: DelegateState, error: string): ResolvedTurn {","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:06:15Z","error":"    const error = `No API key is configured for ${delegate.provider}; set COMMUNION_MODE=hybrid for deterministic fallback or configure the provider for live simulation.`;","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:09:27Z","error":"src/components/WorldScene.tsx(105,60): error TS2352: Conversion of type '{ type: string; name: string; crs: { type: string; properties: { name: string; }; }; features: ({ type: string; properties: { s","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:10:52Z","error":"Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'playwright' imported from /home/tristan/Desktop/Communion/[eval1]","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:11:10Z","error":"Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'playwright' imported from /home/tristan/Desktop/Communion/[eval1]","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:14:47Z","error":"function blockedLiveTurn(delegate: DelegateState, error: string): ResolvedTurn {","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:15:33Z","error":null,"fail":"    throw new Error(text || `Request failed with ${response.status}`);","platform":"codex"}
+{"ts":"2026-06-27T16:37:46Z","error":"Structural diagrams (Mermaid architecture, data flow, component boundaries) are the exception -- those stay as text by convention.","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:39:53Z","error":"Error: Target page, context or browser has been closed","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:43:16Z","error":"Error: No tests found.","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:43:43Z","error":"Error: No tests found.","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:44:08Z","error":"Error: Cannot find module '@playwright/test'","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:49:54Z","error":"      await audit(`flow-error:${reason instanceof Error ? reason.message : String(reason)}`);","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:49:54Z","error":null,"fail":"    throw new Error(text || `Request failed with ${response.status}`);","platform":"codex"}
+{"ts":"2026-06-27T16:55:18Z","error":"Structural diagrams (Mermaid architecture, data flow, component boundaries) are the exception -- those stay as text by convention.","fail":null,"platform":"codex"}
+{"ts":"2026-06-27T16:55:59Z","error":"function blockedLiveTurn(delegate: DelegateState, error: string): ResolvedTurn {","fail":null,"platform":"codex"}

@@ -1,0 +1,59 @@
+
+╔══════════════════════════════════════════════════════════╗
+║           🔍 COMMIT VALIDATION CHECKPOINT                ║
+╠══════════════════════════════════════════════════════════╣
+║                                                          ║
+║  About to commit: 11 files                          ║
+║  Changes: +3566 / -8 lines                   ║
+║  Session: mem-20260627-967e86e7                    ║
+║                                                          ║
+║  Session Goals:                                          ║
+║    No specific goals set for this session
+║                                                          ║
+╠══════════════════════════════════════════════════════════╣
+║  Files to be committed:                                  ║
+║                                                          ║
+║  ✓ AGENTS.md (NEW) 
+║    └─ +33/-0
+║  ✓ ASSET_SOURCES.md (NEW) 
+║    └─ +23/-0
+║  ✓ package-lock.json (NEW) 
+║    └─ +3498/-0
+║  ✓ package.json (MODIFIED) 
+║    └─ +1/-0
+║  ✓ public/textures/earth_atmos_2048.jpg (NEW) 
+║    └─ +-/--
+║  ✓ public/textures/earth_clouds_1024.png (NEW) 
+║    └─ +-/--
+║  ✓ public/textures/earth_lights_2048.png (NEW) 
+║    └─ +-/--
+║  ✓ public/textures/earth_normal_2048.jpg (NEW) 
+║    └─ +-/--
+║  ✓ public/textures/earth_specular_2048.jpg (NEW) (Test)
+║    └─ +-/--
+║  ✓ src/components/WorldScene.tsx (MODIFIED) (UI)
+║    └─ +10/-8
+║  ✓ src/data/ne_110m_populated_places.json (NEW) 
+║    └─ +1/-0
+║                                                          ║
+╠══════════════════════════════════════════════════════════╣
+║                                                          ║
+║  ⚠️  LARGE COMMIT DETECTED                               ║
+║     Please validate these changes match expectations     ║
+║                                                          ║
+╠══════════════════════════════════════════════════════════╣
+║  Validation Questions:                                   ║
+║                                                          ║
+║  1. Do all files match the session goals?                ║
+║  2. Are there any mistakes or wrong approaches?          ║
+║  3. Should any changes be corrected before commit?       ║
+║  4. Is the commit message semantic and descriptive?      ║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝
+
+
+Session: mem-20260627-967e86e7
+Files: 11
+Changes: +3566/-8
+Large Commit: true
+Timestamp: 2026-06-27T15:40:10Z

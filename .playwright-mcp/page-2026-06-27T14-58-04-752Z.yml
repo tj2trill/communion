@@ -1,0 +1,278 @@
+- generic [ref=e11]:
+  - banner [ref=e12]:
+    - generic [ref=e19]:
+      - heading "COMMUNION" [level=1] [ref=e20]
+      - paragraph [ref=e21]: Multi-model civilization laboratory
+    - generic [ref=e24]:
+      - strong [ref=e25]: SIMULATION PAUSED
+      - generic [ref=e26]: YEAR 2042 · DAY 1 · TURN 0
+    - generic [ref=e27]:
+      - button "Run" [ref=e28] [cursor=pointer]:
+        - img [ref=e29]
+      - button "Advance one delegate turn" [ref=e31] [cursor=pointer]:
+        - img [ref=e32]
+      - generic "Simulation speed" [ref=e34]:
+        - img [ref=e35]
+        - combobox [ref=e38] [cursor=pointer]:
+          - option "0.5×"
+          - option "1×" [selected]
+          - option "2×"
+          - option "4×"
+          - option "8×"
+      - button "Scenarios" [ref=e40] [cursor=pointer]:
+        - img [ref=e41]
+        - text: Scenarios
+        - img [ref=e43]
+      - button "Reset world" [ref=e45] [cursor=pointer]:
+        - img [ref=e46]
+      - button "Export state" [ref=e49] [cursor=pointer]:
+        - img [ref=e50]
+  - generic [ref=e53]:
+    - generic [ref=e54]:
+      - img [ref=e55]
+      - generic [ref=e59]: Population
+      - strong [ref=e60]: 161M
+    - generic [ref=e61]:
+      - img [ref=e62]
+      - generic [ref=e65]: GDP
+      - strong [ref=e66]: 10.1T
+    - generic [ref=e67]:
+      - img [ref=e68]
+      - generic [ref=e71]: Fiat supply
+      - strong [ref=e72]: 3,420B
+    - generic [ref=e73]:
+      - img [ref=e74]
+      - generic [ref=e79]: Gold
+      - strong [ref=e80]: 2,740 Au
+    - generic [ref=e81]:
+      - img [ref=e82]
+      - generic [ref=e84]: Wars
+      - strong [ref=e85]: "0"
+    - generic [ref=e86]:
+      - img [ref=e87]
+      - generic [ref=e90]: Food security
+      - strong [ref=e91]: "80"
+    - generic [ref=e92]:
+      - img [ref=e93]
+      - generic [ref=e96]: Current delegate
+      - strong [ref=e97]: GPT Delegate
+  - main [ref=e98]:
+    - complementary [ref=e99]:
+      - navigation [ref=e100]:
+        - button "Nations" [ref=e101] [cursor=pointer]:
+          - img [ref=e102]
+          - generic [ref=e107]: Nations
+        - button "Hierarchy" [ref=e108] [cursor=pointer]:
+          - img [ref=e109]
+          - generic [ref=e113]: Hierarchy
+        - button "Economy" [ref=e114] [cursor=pointer]:
+          - img [ref=e115]
+          - generic [ref=e120]: Economy
+        - button "Conflict" [ref=e121] [cursor=pointer]:
+          - img [ref=e122]
+          - generic [ref=e124]: Conflict
+      - generic [ref=e125]:
+        - generic [ref=e126]:
+          - img [ref=e127]
+          - generic [ref=e132]:
+            - strong [ref=e133]: Four founding sovereign states
+            - generic [ref=e134]: Each model owns land, institutions, a fiat currency, and sovereign gold from genesis.
+        - generic [ref=e135]:
+          - button "Axiom Republic Council republic 68% 48M 2,850B WSU AXM 780 Au Civic technocracy +3.1%" [ref=e136] [cursor=pointer]:
+            - generic [ref=e137]:
+              - generic [ref=e139]:
+                - strong [ref=e140]: Axiom Republic
+                - generic [ref=e141]: Council republic
+              - generic [ref=e142]: 68%
+            - generic [ref=e143]:
+              - generic [ref=e144]:
+                - img [ref=e145]
+                - text: 48M
+              - generic [ref=e149]:
+                - img [ref=e150]
+                - text: 2,850B WSU
+              - generic [ref=e153]:
+                - img [ref=e154]
+                - text: AXM
+              - generic [ref=e157]:
+                - img [ref=e158]
+                - text: 780 Au
+            - generic [ref=e163]:
+              - generic [ref=e164]: Civic technocracy
+              - generic [ref=e165]: +3.1%
+          - button "Vesper Union Parliamentary union 62% 42M 2,410B WSU VSP 650 Au Pluralist pragmatism +2.4%" [ref=e166] [cursor=pointer]:
+            - generic [ref=e167]:
+              - generic [ref=e169]:
+                - strong [ref=e170]: Vesper Union
+                - generic [ref=e171]: Parliamentary union
+              - generic [ref=e172]: 62%
+            - generic [ref=e173]:
+              - generic [ref=e174]:
+                - img [ref=e175]
+                - text: 42M
+              - generic [ref=e179]:
+                - img [ref=e180]
+                - text: 2,410B WSU
+              - generic [ref=e183]:
+                - img [ref=e184]
+                - text: VSP
+              - generic [ref=e187]:
+                - img [ref=e188]
+                - text: 650 Au
+            - generic [ref=e193]:
+              - generic [ref=e194]: Pluralist pragmatism
+              - generic [ref=e195]: +2.4%
+          - button "Lumen Commonwealth Commonwealth assembly 71% 37M 2,630B WSU LUM 720 Au Rights-first stewardship +2.8%" [ref=e196] [cursor=pointer]:
+            - generic [ref=e197]:
+              - generic [ref=e199]:
+                - strong [ref=e200]: Lumen Commonwealth
+                - generic [ref=e201]: Commonwealth assembly
+              - generic [ref=e202]: 71%
+            - generic [ref=e203]:
+              - generic [ref=e204]:
+                - img [ref=e205]
+                - text: 37M
+              - generic [ref=e209]:
+                - img [ref=e210]
+                - text: 2,630B WSU
+              - generic [ref=e213]:
+                - img [ref=e214]
+                - text: LUM
+              - generic [ref=e217]:
+                - img [ref=e218]
+                - text: 720 Au
+            - generic [ref=e223]:
+              - generic [ref=e224]: Rights-first stewardship
+              - generic [ref=e225]: +2.8%
+          - button "Meridian Assembly Federal assembly 65% 34M 2,190B WSU MRD 590 Au Experimental federalism +3.4%" [ref=e226] [cursor=pointer]:
+            - generic [ref=e227]:
+              - generic [ref=e229]:
+                - strong [ref=e230]: Meridian Assembly
+                - generic [ref=e231]: Federal assembly
+              - generic [ref=e232]: 65%
+            - generic [ref=e233]:
+              - generic [ref=e234]:
+                - img [ref=e235]
+                - text: 34M
+              - generic [ref=e239]:
+                - img [ref=e240]
+                - text: 2,190B WSU
+              - generic [ref=e243]:
+                - img [ref=e244]
+                - text: MRD
+              - generic [ref=e247]:
+                - img [ref=e248]
+                - text: 590 Au
+            - generic [ref=e253]:
+              - generic [ref=e254]: Experimental federalism
+              - generic [ref=e255]: +3.4%
+        - generic [ref=e256]:
+          - heading "International order" [level=3] [ref=e257]
+          - generic [ref=e258]:
+            - generic [ref=e259]:
+              - strong [ref=e260]: World Assembly
+              - generic [ref=e261]: assembly · 4 members
+            - generic "72.0" [ref=e262]:
+              - generic [ref=e265]: "72"
+          - generic [ref=e266]:
+            - generic [ref=e267]:
+              - strong [ref=e268]: Reserve and Gold Forum
+              - generic [ref=e269]: reserve · 4 members
+            - generic "68.0" [ref=e270]:
+              - generic [ref=e273]: "68"
+          - generic [ref=e274]:
+            - generic [ref=e275]:
+              - strong [ref=e276]: Development Bank
+              - generic [ref=e277]: development · 4 members
+            - generic "66.0" [ref=e278]:
+              - generic [ref=e281]: "66"
+          - generic [ref=e282]:
+            - generic [ref=e283]:
+              - strong [ref=e284]: Security Council
+              - generic [ref=e285]: security · 4 members
+            - generic "61.0" [ref=e286]:
+              - generic [ref=e289]: "61"
+    - generic [ref=e290]:
+      - generic [ref=e291]:
+        - generic:
+          - generic:
+            - generic:
+              - strong: Axiom Republic
+              - generic: AXM · 780 Au
+        - generic:
+          - generic:
+            - generic:
+              - strong: Vesper Union
+              - generic: VSP · 650 Au
+        - generic:
+          - generic:
+            - generic:
+              - strong: Lumen Commonwealth
+              - generic: LUM · 720 Au
+        - generic:
+          - generic:
+            - generic:
+              - strong: Meridian Assembly
+              - generic: MRD · 590 Au
+        - generic:
+          - generic:
+            - generic:
+              - strong: GPT Delegate
+              - generic: Founding delegate · deliberating
+        - generic:
+          - generic:
+            - generic: "Opening session: each sovereign ledger begins with fiat, debt, institutions, and audited gold reserves."
+        - generic:
+          - generic:
+            - generic:
+              - strong: Grok Delegate
+              - generic: Founding delegate · deliberating
+        - generic:
+          - generic:
+            - generic:
+              - strong: Claude Delegate
+              - generic: Founding delegate · deliberating
+        - generic:
+          - generic:
+            - generic:
+              - strong: Gemini Delegate
+              - generic: Founding delegate · deliberating
+      - generic [ref=e296]:
+        - strong [ref=e297]: Axiom Republic
+        - generic [ref=e298]: Baseline constitutional founding
+      - generic [ref=e299]:
+        - generic [ref=e300]:
+          - img [ref=e301]
+          - text: AVATAR
+        - button "Exterior" [ref=e305] [cursor=pointer]:
+          - img [ref=e306]
+          - text: Exterior
+        - button "Skeleton" [ref=e309] [cursor=pointer]:
+          - img [ref=e310]
+          - text: Skeleton
+        - button "Organs" [ref=e312] [cursor=pointer]:
+          - img [ref=e313]
+          - text: Organs
+        - button "X-ray" [ref=e316] [cursor=pointer]:
+          - img [ref=e317]
+          - text: X-ray
+      - generic [ref=e322]:
+        - generic [ref=e323]:
+          - img [ref=e324]
+          - text: OVERLAY
+        - button "Political" [ref=e326] [cursor=pointer]
+        - button "Growth" [ref=e327] [cursor=pointer]
+        - button "Gold" [ref=e328] [cursor=pointer]
+        - button "Diplomacy" [ref=e329] [cursor=pointer]
+        - button "Conflict" [ref=e330] [cursor=pointer]
+      - generic [ref=e331]:
+        - generic [ref=e332]:
+          - img [ref=e333]
+          - generic [ref=e336]: NONBINDING OBSERVER CHANNEL
+        - textbox "Introduce a public question or scenario constraint…" [ref=e337]
+        - button "Send observer prompt" [disabled] [ref=e338]:
+          - img [ref=e339]
+  - contentinfo [ref=e342]:
+    - generic [ref=e343]: "Contained simulation: no external tools or authority"
+    - generic [ref=e345]: Fiat and gold markets · institutional hierarchy · aggregate conflict effects · append-only audit
+    - generic [ref=e346]: Last state 10:51:10 AM
