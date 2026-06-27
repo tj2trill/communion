@@ -5,6 +5,8 @@ import * as THREE from 'three';
 import { GLOBE_RADIUS } from '../lib/globe';
 import type { OverlayMode } from '../lib/types';
 
+const LAND_NORMAL_SCALE = new THREE.Vector2(0.92, 0.92);
+
 // Photoreal Earth globe using real satellite textures (day color, surface normals,
 // ocean specular, and night city-lights = population glow) plus a cloud shell and
 // atmosphere. Drop-in replacement for the canvas-drawn <Globe/>; same props.
@@ -33,6 +35,7 @@ export function RealisticGlobe({ overlay }: { overlay: OverlayMode }) {
         <meshStandardMaterial
           map={dayMap}
           normalMap={normalMap}
+          normalScale={LAND_NORMAL_SCALE}
           metalnessMap={specularMap}
           metalness={0.32}
           roughness={0.72}

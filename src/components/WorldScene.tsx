@@ -2,6 +2,8 @@ import { Html, Line, MapControls } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
+import countries50mData from '../data/ne_50m_countries.json';
+import land50mData from '../data/ne_50m_land.json';
 import populatedPlacesData from '../data/ne_110m_populated_places.json';
 import { Flag } from './Flag';
 import { GltfHuman } from './GltfHuman';
@@ -9,6 +11,15 @@ import { Humanoid } from './Humanoid';
 import { RealisticGlobe } from './RealisticGlobe';
 import { GLOBE_RADIUS, lonLatToVector, simulationPointToLonLat, simulationPointToVector, surfaceQuaternion } from '../lib/globe';
 import type { AnatomyMode, NeutralTerritoryState, OverlayMode, Vec2, WorldState } from '../lib/types';
+
+type LonLat = [number, number];
+type PolygonCoordinates = LonLat[][];
+type MultiPolygonCoordinates = PolygonCoordinates[];
+type NaturalEarthGeometry =
+  | { type: 'Polygon'; coordinates: PolygonCoordinates }
+  | { type: 'MultiPolygon'; coordinates: MultiPolygonCoordinates };
+type NaturalEarthFeature = { geometry?: NaturalEarthGeometry };
+type NaturalEarthCollection = { features: NaturalEarthFeature[] };
 
 type PopulatedPlaceFeature = {
   geometry?: { type: string; coordinates: [number, number] };
@@ -45,6 +56,63 @@ function CameraRig({ world, selectedNationId }: Pick<WorldSceneProps, 'world' | 
 
 function surfaceLine(points: Vec2[], altitude = 0.08) {
   return [...points, points[0]].map((point) => simulationPointToVector(point, altitude));
+}
+
+function geometryPolygons(geometry?: NaturalEarthGeometry): PolygonCoordinates[] {
+  if (!geometry) return [];
+  return geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates;
+}
+
+function geoJsonLineSegments(collection: NaturalEarthCollection, altitude: number, maxRingPoints: number) {
+  const vertices: number[] = [];
+  for (const feature of collection.features) {
+    for (const polygon of geometryPolygons(feature.geometry)) {
+      for (const ring of polygon) {
+        if (ring.length < 2) continue;
+        const step = Math.max(1, Math.ceil(ring.length / maxRingPoints));
+        for (let index = 0; index < ring.length - 1; index += step) {
+          const nextIndex = Math.min(index + step, ring.length - 1);
+          const [lonA, latA] = ring[index];
+          const [lonB, latB] = ring[nextIndex];
+          const a = lonLatToVector(lonA, latA, GLOBE_RADIUS + altitude);
+          const b = lonLatToVector(lonB, latB, GLOBE_RADIUS + altitude);
+          vertices.push(a.x, a.y, a.z, b.x, b.y, b.z);
+        }
+      }
+    }
+  }
+  return new Float32Array(vertices);
+}
+
+function CartographySegments({ positions, color, opacity }: { positions: Float32Array; color: string; opacity: number }) {
+  const geometry = useMemo(() => {
+    const output = new THREE.BufferGeometry();
+    output.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    output.computeBoundingSphere();
+    return output;
+  }, [positions]);
+
+  useEffect(() => () => geometry.dispose(), [geometry]);
+
+  return (
+    <lineSegments geometry={geometry} frustumCulled={false} renderOrder={2}>
+      <lineBasicMaterial color={color} transparent opacity={opacity} depthWrite={false} toneMapped={false} />
+    </lineSegments>
+  );
+}
+
+function EarthCartographyLayer({ overlay }: { overlay: OverlayMode }) {
+  const coastPositions = useMemo(() => geoJsonLineSegments(land50mData as unknown as NaturalEarthCollection, 0.035, 180), []);
+  const countryPositions = useMemo(() => geoJsonLineSegments(countries50mData as unknown as NaturalEarthCollection, 0.055, 160), []);
+  const political = overlay === 'political';
+  const conflict = overlay === 'conflict';
+
+  return (
+    <>
+      <CartographySegments positions={coastPositions} color={conflict ? '#ffb187' : '#98c9b1'} opacity={political ? 0.48 : 0.3} />
+      <CartographySegments positions={countryPositions} color={conflict ? '#ffd1b7' : '#d4f4ff'} opacity={political ? 0.35 : 0.18} />
+    </>
+  );
 }
 
 function NationSurface({ world, selectedNationId, onSelectNation }: Pick<WorldSceneProps, 'world' | 'selectedNationId' | 'onSelectNation'>) {
@@ -316,6 +384,7 @@ function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectN
       <pointLight position={[8, 6, -8]} intensity={18} distance={34} color="#6bd8ff" />
 
       <RealisticGlobe overlay={overlay} />
+      <EarthCartographyLayer overlay={overlay} />
       <NationSurface world={world} selectedNationId={selectedNationId} onSelectNation={onSelectNation} />
       <NeutralSurface world={world} />
       <CityLayer world={world} selectedNationId={selectedNationId} />
