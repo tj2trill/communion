@@ -1,12 +1,13 @@
 import { BadgeDollarSign, Banknote, Coins, Globe2, UsersRound } from 'lucide-react';
 import type { NationState, WorldState } from '../lib/types';
+import { Flag } from './Flag';
 import { Bar, compact, decimal } from './PanelPrimitives';
 
 function NationCard({ nation, selected, onSelect }: { nation: NationState; selected: boolean; onSelect: () => void }) {
   return (
     <button className={`nation-card ${selected ? 'selected' : ''}`} onClick={onSelect} style={{ '--nation': nation.color } as React.CSSProperties}>
       <div className="nation-card-head">
-        <span className="nation-swatch" style={{ background: nation.color }} />
+        <Flag flag={nation.flag} className="nation-flag" />
         <div>
           <strong>{nation.name}</strong>
           <small>{nation.governmentForm}</small>

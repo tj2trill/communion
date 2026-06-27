@@ -1,7 +1,8 @@
-import { Gavel, Landmark, MessagesSquare, Vote } from 'lucide-react';
+import { Brain, Gavel, Landmark, MessagesSquare, Vote } from 'lucide-react';
 import type { DecisionRecord, ProposalState, WorldState } from '../lib/types';
+import { Flag } from './Flag';
 
-export type ActivityTab = 'chat' | 'decisions' | 'assembly';
+export type ActivityTab = 'chat' | 'thoughts' | 'decisions' | 'assembly';
 
 function ChatFeed({ world }: { world: WorldState }) {
   return (
@@ -43,6 +44,35 @@ function DecisionFeed({ world }: { world: WorldState }) {
   );
 }
 
+function ThoughtFeed({ world }: { world: WorldState }) {
+  return (
+    <div className="activity-scroll thought-feed">
+      {world.delegates.map((delegate) => {
+        const nation = world.nations.find((item) => item.id === delegate.nationId);
+        return (
+          <article className={`thought-card ${delegate.id === world.currentDelegateId ? 'active' : ''}`} key={delegate.id} style={{ '--nation': nation?.color ?? '#809099' } as React.CSSProperties}>
+            <header>
+              {nation && <Flag flag={nation.flag} className="thought-flag" />}
+              <div>
+                <strong>{delegate.displayName}</strong>
+                <small>{nation?.name} · {delegate.status} · turn count {delegate.turnCount}</small>
+              </div>
+              <span>{delegate.provider === 'google' ? 'Gemini' : delegate.provider.toUpperCase()}</span>
+            </header>
+            <p>{delegate.currentThought}</p>
+            <div className="thought-meta">
+              <span>{delegate.lastActionType.replaceAll('_', ' ')}</span>
+              <b>trust {delegate.affect.trust.toFixed(0)}</b>
+              <b>fear {delegate.affect.fear.toFixed(0)}</b>
+              <b>resolve {delegate.affect.resolve.toFixed(0)}</b>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
 function ProposalCard({ proposal, world }: { proposal: ProposalState; world: WorldState }) {
   const proposer = world.delegates.find((item) => item.id === proposal.proposerDelegateId);
   const yes = proposal.votes.filter((vote) => vote.choice === 'yes').length;
@@ -77,12 +107,14 @@ function AssemblyFeed({ world }: { world: WorldState }) {
 export function ActivityPanel({ world, tab, onTab }: { world: WorldState; tab: ActivityTab; onTab: (tab: ActivityTab) => void }) {
   return (
     <aside className="side-panel right-panel">
-      <nav className="panel-tabs">
+      <nav className="panel-tabs four-tabs">
         <button className={tab === 'chat' ? 'active' : ''} onClick={() => onTab('chat')}><MessagesSquare size={17} /><span>Chat</span><b>{world.messages.length}</b></button>
+        <button className={tab === 'thoughts' ? 'active' : ''} onClick={() => onTab('thoughts')}><Brain size={17} /><span>Thoughts</span><b>{world.delegates.length}</b></button>
         <button className={tab === 'decisions' ? 'active' : ''} onClick={() => onTab('decisions')}><Landmark size={17} /><span>Decisions</span><b>{world.decisions.length}</b></button>
         <button className={tab === 'assembly' ? 'active' : ''} onClick={() => onTab('assembly')}><Vote size={17} /><span>Assembly</span><b>{world.proposals.filter((item) => item.status === 'open').length}</b></button>
       </nav>
       {tab === 'chat' && <ChatFeed world={world} />}
+      {tab === 'thoughts' && <ThoughtFeed world={world} />}
       {tab === 'decisions' && <DecisionFeed world={world} />}
       {tab === 'assembly' && <AssemblyFeed world={world} />}
     </aside>

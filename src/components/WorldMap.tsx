@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { ChatMessage, NationState, OverlayMode, RelationState, WorldState } from '../lib/types';
+import { Flag } from './Flag';
 
 function colorByOverlay(nation: NationState, overlay: OverlayMode, world: WorldState): string {
   if (overlay === 'political') return nation.color;
@@ -69,8 +70,8 @@ export function Territory({
           color={color}
           roughness={0.78}
           metalness={overlay === 'gold' ? 0.34 : 0.04}
-          emissive={selected ? nation.color : '#000000'}
-          emissiveIntensity={selected ? 0.18 : 0}
+          emissive={nation.color}
+          emissiveIntensity={selected ? 0.22 : 0.08}
         />
         <Edges color={selected ? '#ffffff' : nation.secondaryColor} threshold={22} lineWidth={selected ? 2 : 1} />
       </mesh>
@@ -111,6 +112,7 @@ export function CapitalCluster({ nation }: { nation: NationState }) {
       </mesh>
       <Html center position={[0, 1.85, 0]} distanceFactor={14} className="map-label-wrapper">
         <div className="map-label" style={{ borderColor: nation.color }}>
+          <Flag flag={nation.flag} className="map-label-flag" />
           <strong>{nation.name}</strong>
           <span>{nation.economy.fiat.code} · {nation.economy.gold.treasuryReserves.toFixed(0)} Au</span>
         </div>

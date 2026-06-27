@@ -1,10 +1,17 @@
-import { MapControls, RoundedBox } from '@react-three/drei';
-import { Canvas, useThree } from '@react-three/fiber';
-import { Suspense, useEffect } from 'react';
-import type { AnatomyMode, OverlayMode, WorldState } from '../lib/types';
+import { Html, Line, MapControls } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
+import * as THREE from 'three';
+import countriesData from '../data/ne_110m_countries.json';
+import landData from '../data/ne_110m_land.json';
+import { Flag } from './Flag';
 import { Humanoid } from './Humanoid';
-import { CapitalCluster, CommunicationPulse, RelationArc, Territory } from './WorldMap';
+import { GLOBE_RADIUS, lonLatToVector, simulationPointToLonLat, simulationPointToVector, surfaceQuaternion } from '../lib/globe';
+import type { AnatomyMode, NeutralTerritoryState, OverlayMode, Vec2, WorldState } from '../lib/types';
 
+type Ring = Array<[number, number]>;
+type GeoFeature = { geometry?: { type: string; coordinates: unknown } };
+type FeatureCollection = { features: GeoFeature[] };
 
 export interface WorldSceneProps {
   world: WorldState;
@@ -14,45 +21,363 @@ export interface WorldSceneProps {
   onSelectNation: (nationId: string) => void;
 }
 
-function CameraRig() {
-  const { camera } = useThree();
+function ringsFromGeometry(geometry: GeoFeature['geometry']): Ring[] {
+  if (!geometry) return [];
+  if (geometry.type === 'Polygon') return (geometry.coordinates as Ring[][]).map((polygon) => polygon[0]);
+  if (geometry.type === 'MultiPolygon') return (geometry.coordinates as Ring[][][]).flatMap((polygon) => polygon.map((ring) => ring));
+  return [];
+}
+
+function ringToTexturePath(context: CanvasRenderingContext2D, ring: Ring, width: number, height: number) {
+  ring.forEach(([lon, lat], index) => {
+    const x = ((lon + 180) / 360) * width;
+    const y = ((90 - lat) / 180) * height;
+    if (index === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  });
+}
+
+function makeEarthTexture() {
+  const width = 2048;
+  const height = 1024;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d')!;
+  const ocean = context.createLinearGradient(0, 0, 0, height);
+  ocean.addColorStop(0, '#0b3157');
+  ocean.addColorStop(0.48, '#0a6578');
+  ocean.addColorStop(1, '#082847');
+  context.fillStyle = ocean;
+  context.fillRect(0, 0, width, height);
+
+  context.save();
+  context.shadowColor = 'rgba(108, 211, 196, 0.24)';
+  context.shadowBlur = 8;
+  context.fillStyle = '#2f784b';
+  context.strokeStyle = '#7fb783';
+  context.lineWidth = 1.1;
+  for (const feature of (landData as FeatureCollection).features) {
+    for (const ring of ringsFromGeometry(feature.geometry)) {
+      context.beginPath();
+      ringToTexturePath(context, ring, width, height);
+      context.closePath();
+      context.fill();
+      context.stroke();
+    }
+  }
+  context.restore();
+
+  context.strokeStyle = 'rgba(223, 234, 214, 0.3)';
+  context.lineWidth = 0.65;
+  for (const feature of (countriesData as FeatureCollection).features) {
+    for (const ring of ringsFromGeometry(feature.geometry)) {
+      context.beginPath();
+      ringToTexturePath(context, ring, width, height);
+      context.stroke();
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
+function CameraRig({ world, selectedNationId }: Pick<WorldSceneProps, 'world' | 'selectedNationId'>) {
+  const { camera, controls } = useThree();
+  const selected = world.nations.find((nation) => nation.id === selectedNationId) ?? world.nations[0];
+  const focus = useMemo(() => simulationPointToVector(selected.territory.capital, 0.3), [selected.territory.capital]);
   useEffect(() => {
-    camera.position.set(0, 17, 18);
-    camera.lookAt(0, 0, 0);
-  }, [camera]);
+    const direction = focus.clone().normalize();
+    camera.position.copy(direction.multiplyScalar(14.2).add(new THREE.Vector3(0, 2.1, 0)));
+    camera.lookAt(focus);
+    const mapControls = controls as { target?: THREE.Vector3; update?: () => void } | undefined;
+    if (mapControls?.target) {
+      mapControls.target.copy(focus);
+      mapControls.update?.();
+    }
+  }, [camera, controls, focus]);
   return null;
+}
+
+function Globe({ overlay }: { overlay: OverlayMode }) {
+  const globe = useRef<THREE.Mesh>(null);
+  const texture = useMemo(() => makeEarthTexture(), []);
+  useFrame(({ clock }) => {
+    if (globe.current) globe.current.rotation.y = Math.sin(clock.elapsedTime * 0.08) * 0.035;
+  });
+  return (
+    <group>
+      <mesh ref={globe} castShadow receiveShadow>
+        <sphereGeometry args={[GLOBE_RADIUS, 128, 96]} />
+        <meshStandardMaterial
+          map={texture}
+          roughness={0.68}
+          metalness={0.02}
+          emissive={overlay === 'conflict' ? '#201018' : '#061016'}
+          emissiveIntensity={overlay === 'conflict' ? 0.18 : 0.04}
+        />
+      </mesh>
+      <mesh>
+        <sphereGeometry args={[GLOBE_RADIUS + 0.025, 128, 96]} />
+        <meshBasicMaterial color="#7ee8ff" transparent opacity={0.045} side={THREE.BackSide} />
+      </mesh>
+      <mesh>
+        <sphereGeometry args={[GLOBE_RADIUS + 0.55, 128, 96]} />
+        <meshBasicMaterial color="#62d7ff" transparent opacity={0.055} side={THREE.BackSide} />
+      </mesh>
+    </group>
+  );
+}
+
+function surfaceLine(points: Vec2[], altitude = 0.08) {
+  return [...points, points[0]].map((point) => simulationPointToVector(point, altitude));
+}
+
+function NationSurface({ world, selectedNationId, onSelectNation }: Pick<WorldSceneProps, 'world' | 'selectedNationId' | 'onSelectNation'>) {
+  return (
+    <>
+      {world.nations.map((nation) => {
+        const selected = nation.id === selectedNationId;
+        const points = surfaceLine(nation.territory.polygon, selected ? 0.18 : 0.14);
+        const capital = simulationPointToVector(nation.territory.capital, 0.34);
+        const label = simulationPointToVector(nation.territory.labelPosition, 0.7);
+        return (
+          <group key={nation.id}>
+            <Line points={points} color={selected ? '#ffffff' : nation.color} lineWidth={selected ? 3 : 2} transparent opacity={selected ? 0.95 : 0.72} />
+            <mesh position={capital} quaternion={surfaceQuaternion(capital)} onClick={(event) => { event.stopPropagation(); onSelectNation(nation.id); }}>
+              <sphereGeometry args={[selected ? 0.11 : 0.075, 14, 14]} />
+              <meshStandardMaterial color={nation.color} emissive={nation.color} emissiveIntensity={0.75} roughness={0.35} />
+            </mesh>
+            <Html center position={label.toArray()} distanceFactor={11} className="map-label-wrapper">
+              <div className="map-label globe-label" style={{ borderColor: nation.color }}>
+                <Flag flag={nation.flag} className="map-label-flag" />
+                <strong>{nation.name}</strong>
+                <span>{nation.economy.fiat.code} · {(nation.social.population / 1_000_000_000).toFixed(2)}B people</span>
+              </div>
+            </Html>
+          </group>
+        );
+      })}
+    </>
+  );
+}
+
+function NeutralSurface({ world }: { world: WorldState }) {
+  return (
+    <>
+      {world.neutralTerritories.map((territory) => {
+        const controller = territory.controllingNationId ? world.nations.find((nation) => nation.id === territory.controllingNationId) : undefined;
+        const color = controller?.color ?? '#e7d28a';
+        const label = simulationPointToVector(territory.labelPosition, 0.58);
+        return (
+          <group key={territory.id}>
+            <Line points={surfaceLine(territory.polygon, 0.22)} color={color} lineWidth={2.2} dashed={!controller} dashSize={0.18} gapSize={0.1} transparent opacity={0.9} />
+            <Html center position={label.toArray()} distanceFactor={12} className="map-label-wrapper">
+              <div className="frontier-label" style={{ borderColor: color }}>
+                <strong>{territory.name}</strong>
+                <span>{controller ? `Controlled by ${controller.name}` : 'Free land'} · contest {territory.contestLevel.toFixed(0)}</span>
+              </div>
+            </Html>
+          </group>
+        );
+      })}
+    </>
+  );
+}
+
+function deterministicPoints(polygon: Vec2[], count: number, salt: number) {
+  const xs = polygon.map((point) => point.x);
+  const zs = polygon.map((point) => point.z);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minZ = Math.min(...zs);
+  const maxZ = Math.max(...zs);
+  return Array.from({ length: count }, (_, index) => {
+    const seed = (index + 1) * (salt + 13);
+    return {
+      x: minX + (((Math.sin(seed) + 1) / 2) * 0.78 + 0.11) * (maxX - minX),
+      z: minZ + (((Math.cos(seed * 1.31) + 1) / 2) * 0.76 + 0.12) * (maxZ - minZ)
+    };
+  });
+}
+
+function PopulationLayer({ world }: { world: WorldState }) {
+  return (
+    <>
+      {world.nations.flatMap((nation, nationIndex) => {
+        const count = Math.max(16, Math.round(nation.social.population / 95_000_000));
+        return deterministicPoints(nation.territory.polygon, count, nationIndex + 5).map((point, index) => {
+          const position = simulationPointToVector(point, 0.2);
+          return (
+            <mesh key={`${nation.id}-pop-${index}`} position={position} quaternion={surfaceQuaternion(position)}>
+              <sphereGeometry args={[0.018 + (index % 4) * 0.004, 6, 6]} />
+              <meshBasicMaterial color={nation.secondaryColor} transparent opacity={0.82} toneMapped={false} />
+            </mesh>
+          );
+        });
+      })}
+    </>
+  );
+}
+
+function GlobeTree({ point, scale = 1 }: { point: Vec2; scale?: number }) {
+  const position = simulationPointToVector(point, 0.22);
+  return (
+    <group position={position} quaternion={surfaceQuaternion(position)} scale={scale}>
+      <mesh position={[0, 0.05, 0]} castShadow>
+        <cylinderGeometry args={[0.018, 0.024, 0.12, 6]} />
+        <meshStandardMaterial color="#7a4d29" roughness={0.88} />
+      </mesh>
+      <mesh position={[0, 0.15, 0]} castShadow>
+        <coneGeometry args={[0.08, 0.18, 8]} />
+        <meshStandardMaterial color="#2f8c58" roughness={0.78} />
+      </mesh>
+    </group>
+  );
+}
+
+function GlobeStone({ point, scale = 1 }: { point: Vec2; scale?: number }) {
+  const position = simulationPointToVector(point, 0.2);
+  return (
+    <mesh position={position} quaternion={surfaceQuaternion(position)} scale={scale} castShadow>
+      <dodecahedronGeometry args={[0.055, 0]} />
+      <meshStandardMaterial color="#b4bdc1" roughness={0.95} metalness={0.02} />
+    </mesh>
+  );
+}
+
+function GlobeWaterSand({ point, kind }: { point: Vec2; kind: 'water' | 'sand' }) {
+  const position = simulationPointToVector(point, 0.16);
+  return (
+    <mesh position={position} quaternion={surfaceQuaternion(position)} rotation={[Math.PI / 2, 0, 0]}>
+      <circleGeometry args={[kind === 'water' ? 0.16 : 0.12, 16]} />
+      <meshBasicMaterial color={kind === 'water' ? '#55c9e0' : '#d6bf7c'} transparent opacity={kind === 'water' ? 0.82 : 0.7} side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
+
+function ResourceLayer({ world }: { world: WorldState }) {
+  const nationItems = world.nations.flatMap((nation, index) => {
+    const points = deterministicPoints(nation.territory.polygon, 36, index + 17);
+    return points.map((point, pointIndex) => ({ point, key: `${nation.id}-${pointIndex}`, type: pointIndex % 6 === 0 ? 'stone' : pointIndex % 7 === 0 ? 'sand' : pointIndex % 11 === 0 ? 'water' : 'tree' }));
+  });
+  const frontierItems = world.neutralTerritories.flatMap((territory: NeutralTerritoryState, index) => {
+    const points = deterministicPoints(territory.polygon, 18, index + 47);
+    return points.map((point, pointIndex) => ({ point, key: `${territory.id}-${pointIndex}`, type: pointIndex % 4 === 0 ? 'stone' : pointIndex % 5 === 0 ? 'water' : territory.resources.sand > territory.resources.trees ? 'sand' : 'tree' }));
+  });
+  return (
+    <>
+      {[...nationItems, ...frontierItems].map((item) => {
+        if (item.type === 'stone') return <GlobeStone key={item.key} point={item.point} scale={1 + (item.key.length % 4) * 0.12} />;
+        if (item.type === 'sand' || item.type === 'water') return <GlobeWaterSand key={item.key} point={item.point} kind={item.type} />;
+        return <GlobeTree key={item.key} point={item.point} scale={0.9 + (item.key.length % 5) * 0.08} />;
+      })}
+    </>
+  );
+}
+
+function CityLayer({ world, selectedNationId }: { world: WorldState; selectedNationId: string }) {
+  return (
+    <>
+      {world.nations.map((nation) => {
+        const position = simulationPointToVector(nation.territory.capital, 0.22);
+        const selected = nation.id === selectedNationId;
+        const populationScale = Math.sqrt(nation.social.population / 2_000_000_000);
+        return (
+          <group key={`city-${nation.id}`} position={position} quaternion={surfaceQuaternion(position)} scale={populationScale * (selected ? 1.75 : 1)}>
+            {Array.from({ length: selected ? 28 : 10 }, (_, index) => {
+              const angle = (Math.PI * 2 * index) / 10;
+              const ring = selected ? Math.floor(index / 10) : 0;
+              const radius = 0.08 + (index % 3) * 0.04 + ring * 0.1;
+              return (
+                <mesh key={index} position={[Math.cos(angle) * radius, 0.08 + (index % 4) * 0.035, Math.sin(angle) * radius]} castShadow>
+                  <boxGeometry args={[0.035, 0.12 + (index % 4) * 0.06, 0.035]} />
+                  <meshStandardMaterial color="#dbe8ea" emissive={nation.color} emissiveIntensity={0.12} roughness={0.48} metalness={0.1} />
+                </mesh>
+              );
+            })}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.16, 0.26, 28]} />
+              <meshBasicMaterial color={nation.color} transparent opacity={0.36} side={THREE.DoubleSide} />
+            </mesh>
+          </group>
+        );
+      })}
+    </>
+  );
+}
+
+function CivilizationLayer({ world, selectedNationId }: { world: WorldState; selectedNationId: string }) {
+  const nation = world.nations.find((item) => item.id === selectedNationId) ?? world.nations[0];
+  const settlements = deterministicPoints(nation.territory.polygon, 18, 211);
+  return (
+    <>
+      {settlements.map((point, index) => {
+        const position = simulationPointToVector(point, 0.24);
+        const districtScale = 0.7 + (index % 5) * 0.08;
+        return (
+          <group key={`settlement-${nation.id}-${index}`} position={position} quaternion={surfaceQuaternion(position)} scale={districtScale}>
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <circleGeometry args={[0.08, 14]} />
+              <meshBasicMaterial color={nation.color} transparent opacity={0.28} side={THREE.DoubleSide} />
+            </mesh>
+            {Array.from({ length: 4 + (index % 4) }, (_, building) => {
+              const angle = (building / 7) * Math.PI * 2;
+              return (
+                <mesh key={building} position={[Math.cos(angle) * 0.075, 0.045 + building * 0.006, Math.sin(angle) * 0.075]} castShadow>
+                  <boxGeometry args={[0.025, 0.07 + (building % 3) * 0.035, 0.025]} />
+                  <meshStandardMaterial color={building % 2 ? '#f0f5f4' : nation.secondaryColor} emissive={nation.color} emissiveIntensity={0.08} roughness={0.52} />
+                </mesh>
+              );
+            })}
+          </group>
+        );
+      })}
+      {deterministicPoints(nation.territory.polygon, 42, 257).map((point, index) => {
+        const position = simulationPointToVector(point, 0.29);
+        return (
+          <mesh key={`selected-civilian-${index}`} position={position} quaternion={surfaceQuaternion(position)}>
+            <capsuleGeometry args={[0.014, 0.045, 4, 6]} />
+            <meshStandardMaterial color={index % 3 === 0 ? nation.secondaryColor : '#f5e4c9'} emissive={nation.color} emissiveIntensity={0.08} roughness={0.68} />
+          </mesh>
+        );
+      })}
+    </>
+  );
 }
 
 function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectNation }: WorldSceneProps) {
   const recentMessages = world.messages.slice(-4);
   return (
     <>
-      <CameraRig />
-      <color attach="background" args={['#061016']} />
-      <fog attach="fog" args={['#061016', 19, 43]} />
-      <ambientLight intensity={0.72} />
-      <hemisphereLight args={['#ccecff', '#152328', 1.15]} />
-      <directionalLight position={[-8, 18, 10]} intensity={2.2} castShadow shadow-mapSize={[2048, 2048]} />
-      <pointLight position={[10, 8, -8]} intensity={18} distance={34} color="#67c8be" />
+      <CameraRig world={world} selectedNationId={selectedNationId} />
+      <color attach="background" args={['#02070c']} />
+      <fog attach="fog" args={['#02070c', 20, 44]} />
+      <ambientLight intensity={0.64} />
+      <hemisphereLight args={['#dff7ff', '#061019', 1.0]} />
+      <directionalLight position={[-10, 8, 9]} intensity={2.6} castShadow shadow-mapSize={[2048, 2048]} />
+      <pointLight position={[8, 6, -8]} intensity={18} distance={34} color="#6bd8ff" />
 
-      <RoundedBox args={[30.5, 0.5, 15.5]} radius={0.65} smoothness={5} position={[0, -0.46, 0]} receiveShadow>
-        <meshStandardMaterial color="#0b2933" roughness={0.42} metalness={0.18} />
-      </RoundedBox>
-      <gridHelper args={[30, 30, '#2d5864', '#15333d']} position={[0, -0.18, 0]} />
-
-      {world.nations.map((nation) => (
-        <Territory
-          key={nation.id}
-          nation={nation}
-          selected={nation.id === selectedNationId}
-          overlay={overlay}
-          world={world}
-          onSelect={() => onSelectNation(nation.id)}
-        />
-      ))}
-      {world.nations.map((nation) => <CapitalCluster key={`capital-${nation.id}`} nation={nation} />)}
-      {world.relations.map((relation) => <RelationArc key={relation.id} relation={relation} world={world} overlay={overlay} />)}
-      {recentMessages.map((message, index) => <CommunicationPulse key={message.id} message={message} world={world} index={index} />)}
+      <Globe overlay={overlay} />
+      <NationSurface world={world} selectedNationId={selectedNationId} onSelectNation={onSelectNation} />
+      <NeutralSurface world={world} />
+      <CityLayer world={world} selectedNationId={selectedNationId} />
+      <CivilizationLayer world={world} selectedNationId={selectedNationId} />
+      <PopulationLayer world={world} />
+      <ResourceLayer world={world} />
+      {recentMessages.map((message, index) => {
+        const fromDelegate = world.delegates.find((delegate) => delegate.id === message.fromDelegateId);
+        const fromNation = world.nations.find((nation) => nation.id === fromDelegate?.nationId);
+        const toDelegate = world.delegates.find((delegate) => delegate.id === message.toDelegateId);
+        const toNation = world.nations.find((nation) => nation.id === toDelegate?.nationId);
+        if (!fromNation) return null;
+        const start = simulationPointToVector(fromNation.territory.capital, 0.45);
+        const end = toNation ? simulationPointToVector(toNation.territory.capital, 0.45) : lonLatToVector(-20 + index * 14, 20 - index * 8, GLOBE_RADIUS + 0.45);
+        const mid = start.clone().lerp(end, 0.5).normalize().multiplyScalar(GLOBE_RADIUS + 2.1);
+        return <Line key={message.id} points={[start, mid, end]} color={fromNation.color} lineWidth={1} transparent opacity={0.45} />;
+      })}
 
       {world.delegates.map((delegate) => {
         const nation = world.nations.find((item) => item.id === delegate.nationId)!;
@@ -66,6 +391,7 @@ function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectN
             message={message}
             active={delegate.id === world.currentDelegateId}
             onSelect={() => onSelectNation(nation.id)}
+            surfaceMode="globe"
           />
         );
       })}
@@ -74,11 +400,11 @@ function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectN
         makeDefault
         enableDamping
         dampingFactor={0.08}
-        minDistance={9}
-        maxDistance={36}
-        minPolarAngle={0.38}
-        maxPolarAngle={1.44}
-        target={[0, 0, 0]}
+        minDistance={10}
+        maxDistance={28}
+        minPolarAngle={0.18}
+        maxPolarAngle={Math.PI - 0.18}
+        target={simulationPointToVector((world.nations.find((nation) => nation.id === selectedNationId) ?? world.nations[0]).territory.capital, 0.3).toArray()}
       />
     </>
   );
@@ -86,7 +412,7 @@ function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectN
 
 export function WorldScene(props: WorldSceneProps) {
   return (
-    <Canvas shadows dpr={[1, 1.7]} gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
+    <Canvas shadows dpr={[1, 1.7]} gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}>
       <Suspense fallback={null}>
         <SceneContent {...props} />
       </Suspense>

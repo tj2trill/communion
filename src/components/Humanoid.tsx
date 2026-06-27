@@ -2,6 +2,7 @@ import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { GLOBE_RADIUS, simulationPointToVector, surfaceQuaternion } from '../lib/globe';
 import type { AffectState, AnatomyMode, ChatMessage, DelegateState, NationState, ProviderId } from '../lib/types';
 
 // Visual identity per backing model so delegates are distinguishable at a glance.
@@ -36,7 +37,8 @@ export function Humanoid({
   anatomyMode,
   message,
   active,
-  onSelect
+  onSelect,
+  surfaceMode = 'plane'
 }: {
   delegate: DelegateState;
   nation: NationState;
@@ -44,6 +46,7 @@ export function Humanoid({
   message?: ChatMessage;
   active: boolean;
   onSelect: () => void;
+  surfaceMode?: 'plane' | 'globe';
 }) {
   const root = useRef<THREE.Group>(null);
   const leftArm = useRef<THREE.Group>(null);
@@ -53,7 +56,12 @@ export function Humanoid({
   const head = useRef<THREE.Group>(null);
   const insignia = useRef<THREE.Mesh>(null);
   const auraRing = useRef<THREE.Mesh>(null);
-  const currentPosition = useRef(new THREE.Vector3(delegate.position.x, nation.territory.elevation + 0.18, delegate.position.z));
+  const altitude = surfaceMode === 'globe' ? 0.28 + nation.territory.elevation * 0.05 : nation.territory.elevation + 0.18;
+  const currentPosition = useRef(
+    surfaceMode === 'globe'
+      ? simulationPointToVector(delegate.position, altitude, GLOBE_RADIUS)
+      : new THREE.Vector3(delegate.position.x, altitude, delegate.position.z)
+  );
   const phase = useMemo(() => delegate.provider.length * 0.71 + delegate.id.length * 0.13, [delegate.provider, delegate.id]);
   const providerColor = PROVIDER_COLOR[delegate.provider] ?? nation.secondaryColor;
   const emotionColor = message ? EMOTION_COLOR[message.emotion] ?? nation.color : nation.color;
@@ -65,11 +73,11 @@ export function Humanoid({
   useFrame(({ clock }, delta) => {
     if (!root.current) return;
     const t = clock.elapsedTime;
-    const target = new THREE.Vector3(delegate.target.x, nation.territory.elevation + 0.18, delegate.target.z);
+    const target = surfaceMode === 'globe'
+      ? simulationPointToVector(delegate.target, altitude, GLOBE_RADIUS)
+      : new THREE.Vector3(delegate.target.x, nation.territory.elevation + 0.18, delegate.target.z);
     const distance = currentPosition.current.distanceTo(target);
     currentPosition.current.lerp(target, Math.min(1, delta * 0.48));
-    root.current.position.copy(currentPosition.current);
-    root.current.rotation.y = THREE.MathUtils.lerp(root.current.rotation.y, delegate.heading, delta * 2.5);
     const moving = distance > 0.08;
 
     // Body language: walking gait while moving, otherwise a pose driven by the delegate's status.
@@ -125,8 +133,18 @@ export function Humanoid({
     if (leftLeg.current) leftLeg.current.rotation.x = THREE.MathUtils.lerp(leftLeg.current.rotation.x, lLeg, delta * 8);
     if (rightLeg.current) rightLeg.current.rotation.x = THREE.MathUtils.lerp(rightLeg.current.rotation.x, rLeg, delta * 8);
     if (head.current) head.current.rotation.z = THREE.MathUtils.lerp(head.current.rotation.z, headTilt, delta * 6);
-    root.current.rotation.x = THREE.MathUtils.lerp(root.current.rotation.x, lean, delta * 6);
-    root.current.position.y += bob;
+    if (surfaceMode === 'globe') {
+      const normal = currentPosition.current.clone().normalize();
+      const displayPosition = currentPosition.current.clone().add(normal.multiplyScalar(bob));
+      root.current.position.copy(displayPosition);
+      root.current.quaternion.slerp(surfaceQuaternion(currentPosition.current, delegate.heading), delta * 3.2);
+      root.current.rotateX(lean);
+    } else {
+      root.current.position.copy(currentPosition.current);
+      root.current.rotation.y = THREE.MathUtils.lerp(root.current.rotation.y, delegate.heading, delta * 2.5);
+      root.current.rotation.x = THREE.MathUtils.lerp(root.current.rotation.x, lean, delta * 6);
+      root.current.position.y += bob;
+    }
 
     // Hovering provider insignia spins and bobs; aura pulses when the delegate is the active speaker.
     if (insignia.current) {
@@ -153,7 +171,7 @@ export function Humanoid({
   );
 
   return (
-    <group ref={root} onClick={(event) => { event.stopPropagation(); onSelect(); }}>
+    <group ref={root} scale={surfaceMode === 'globe' ? 0.42 : 1} onClick={(event) => { event.stopPropagation(); onSelect(); }}>
       {skinVisible && (
         <group>
           <group ref={head} position={[0, 2.18, 0]}>

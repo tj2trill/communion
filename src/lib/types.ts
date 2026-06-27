@@ -152,12 +152,42 @@ export interface TerritoryState {
   area: number;
 }
 
+export interface ResourceState {
+  trees: number;
+  stone: number;
+  sand: number;
+  water: number;
+  gold: number;
+}
+
+export interface NeutralTerritoryState {
+  id: string;
+  name: string;
+  polygon: Vec2[];
+  labelPosition: Vec2;
+  elevation: number;
+  area: number;
+  resources: ResourceState;
+  controllingNationId?: string;
+  claimantNationIds: string[];
+  contestLevel: number;
+  fortification: number;
+}
+
+export interface FlagDesign {
+  pattern: 'cross' | 'diagonal' | 'sun' | 'chevron';
+  primary: string;
+  secondary: string;
+  emblem: string;
+}
+
 export interface NationState {
   id: string;
   name: string;
   adjective: string;
   color: string;
   secondaryColor: string;
+  flag: FlagDesign;
   delegateId: string;
   foundedTurn: number;
   ideology: string;
@@ -343,6 +373,7 @@ export interface WorldState {
   currentDelegateId: string;
   delegates: DelegateState[];
   nations: NationState[];
+  neutralTerritories: NeutralTerritoryState[];
   relations: RelationState[];
   alliances: AllianceState[];
   proposals: ProposalState[];
@@ -378,6 +409,9 @@ export type AgentActionType =
   | 'mobilize'
   | 'conventional_attack'
   | 'peace_offer'
+  | 'claim_land'
+  | 'contest_land'
+  | 'patrol_frontier'
   | 'catastrophic_review'
   | 'authorize_catastrophic'
   | 'cancel_catastrophic';
@@ -387,6 +421,7 @@ export interface AgentActionPayload {
   targetNationId?: string;
   targetDelegateId?: string;
   proposalId?: string;
+  territoryId?: string;
   vote?: 'yes' | 'no' | 'abstain';
   title?: string;
   description?: string;
