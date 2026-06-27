@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { generateCitizen, MOOD_COLOR } from '../lib/citizen';
 import { PostProcessing } from './PostProcessing';
-import type { NationState, ResourceState, SettlementState } from '../lib/types';
+import type { NationState, ResourceState, SettlementState, WorldState } from '../lib/types';
 
 // SimCity-style city dive-in. Procedurally and deterministically builds a gridded
 // city from a settlement's stats: zoned blocks, institutional buildings, a road
@@ -15,6 +15,7 @@ import type { NationState, ResourceState, SettlementState } from '../lib/types';
 interface CitySceneProps {
   settlement: SettlementState;
   nation: NationState;
+  world: WorldState;
   onClose: () => void;
 }
 
@@ -376,7 +377,13 @@ function resourceRow(label: string, value: number) {
   );
 }
 
-export function CityScene({ settlement, nation, onClose }: CitySceneProps) {
+function compactPopulation(value: number): string {
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  return `${Math.round(value).toLocaleString()}`;
+}
+
+export function CityScene({ settlement, nation, world, onClose }: CitySceneProps) {
   const { grid, cell, half, buildings } = useMemo(() => buildCity(settlement, nation), [settlement, nation]);
   const [inspect, setInspect] = useState<number | null>(null);
   const [building, setBuilding] = useState<string | null>(null);
@@ -387,6 +394,21 @@ export function CityScene({ settlement, nation, onClose }: CitySceneProps) {
 
   const blockedForMaterials = settlement.constructionHalted ?? (settlement.construction < 100 && (stock.stone < 5 || stock.trees < 5));
   const society = nation.society;
+  const delegate = world.delegates.find((item) => item.nationId === nation.id);
+  const liveEvents = useMemo(() => {
+    const nationDelegateIds = new Set(world.delegates.filter((item) => item.nationId === nation.id).map((item) => item.id));
+    const decisions = world.decisions
+      .filter((item) => item.nationId === nation.id)
+      .slice(-4)
+      .map((item) => ({ id: item.id, label: item.title, detail: item.summary, flow: item.turn, type: item.type }));
+    const messages = world.messages
+      .filter((item) => nationDelegateIds.has(item.fromDelegateId))
+      .slice(-3)
+      .map((item) => ({ id: item.id, label: item.actionType.replaceAll('_', ' '), detail: item.content, flow: item.turn, type: item.actionType }));
+    return [...decisions, ...messages].sort((a, b) => b.flow - a.flow).slice(0, 5);
+  }, [nation.id, world.decisions, world.delegates, world.messages]);
+  const localCohorts = nation.civilianCohorts.filter((cohort) => cohort.fromSettlementId === settlement.id || cohort.toSettlementId === settlement.id);
+  const movingPeople = localCohorts.reduce((sum, cohort) => sum + cohort.representedPopulation, 0);
   const policy = nation.policy as Record<string, string | number | boolean>;
   const reg = (key: string) => String(policy[key] ?? 'n/a');
   const metric = (label: string, value?: number) => (value == null ? null : (
@@ -466,6 +488,28 @@ export function CityScene({ settlement, nation, onClose }: CitySceneProps) {
         </div>
         {building && <div className="city-building-note">Selected: <b>{building}</b></div>}
 
+        <h4>Live command</h4>
+        <div className="city-live-card">
+          <header>
+            <span>{delegate?.displayName ?? 'Delegate'}</span>
+            <b>{delegate?.autonomy?.cadence ?? 'watching'}</b>
+          </header>
+          <p>{delegate?.currentThought ?? 'Awaiting the next streamed model thought.'}</p>
+          <div className="city-live-meta">
+            <span>{delegate?.lastActionType.replaceAll('_', ' ') ?? 'observe'}</span>
+            <span>{delegate?.lastProviderSource ?? world.mode}</span>
+            <span>{delegate?.autonomy ? `${delegate.autonomy.readiness.toFixed(0)}%` : '0%'}</span>
+          </div>
+        </div>
+
+        <h4>Local movement</h4>
+        <div className="city-flow-grid">
+          <div><b>{localCohorts.length}</b><span>Active routes</span></div>
+          <div><b>{compactPopulation(movingPeople)}</b><span>People represented</span></div>
+          <div><b>{world.flow?.scheduling ?? 'free-flow'}</b><span>Scheduler</span></div>
+          <div><b>{world.flow?.actorsPerFrame ?? 1}</b><span>Actors/frame</span></div>
+        </div>
+
         <h4>Government &amp; regulations</h4>
         <div className="city-reg-grid">
           <div><span>Ideology</span><b>{nation.ideologyVariant ?? 'n/a'}</b></div>
@@ -491,6 +535,17 @@ export function CityScene({ settlement, nation, onClose }: CitySceneProps) {
             {metric('Civil unrest', society.civilUnrest)}
           </>
         )}
+
+        <h4>Recent activity</h4>
+        <div className="city-event-feed">
+          {liveEvents.length ? liveEvents.map((event) => (
+            <article key={event.id}>
+              <header><span>{event.type.replaceAll('_', ' ')}</span><b>flow {event.flow}</b></header>
+              <strong>{event.label}</strong>
+              <p>{event.detail}</p>
+            </article>
+          )) : <div className="city-empty">Waiting for national activity.</div>}
+        </div>
 
         <p className="city-hint">Click a citizen to open their civilian space.</p>
       </div>

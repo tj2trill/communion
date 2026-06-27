@@ -273,7 +273,7 @@ export default function App() {
       </main>
 
       {selectedCity && (
-        <CityScene settlement={selectedCity.settlement} nation={selectedCity.nation} onClose={() => setSelectedCityId(null)} />
+        <CityScene settlement={selectedCity.settlement} nation={selectedCity.nation} world={world} onClose={() => setSelectedCityId(null)} />
       )}
 
       <footer className="statusbar">

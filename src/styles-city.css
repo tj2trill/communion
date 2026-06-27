@@ -212,6 +212,144 @@
   color: #ffe1a8;
 }
 
+.city-live-card {
+  padding: 0.55rem 0.6rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(150, 220, 255, 0.18);
+  background: rgba(20, 40, 56, 0.48);
+}
+
+.city-live-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.city-live-card header span {
+  min-width: 0;
+  color: #eaf6ff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.city-live-card header b {
+  flex: 0 0 auto;
+  padding: 0.12rem 0.34rem;
+  border-radius: 0.35rem;
+  background: rgba(124, 255, 178, 0.12);
+  color: #9fffd0;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.city-live-card p {
+  margin: 0;
+  color: #c9ddea;
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.city-live-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  margin-top: 0.48rem;
+}
+
+.city-live-meta span {
+  padding: 0.12rem 0.3rem;
+  border-radius: 0.32rem;
+  background: rgba(150, 220, 255, 0.08);
+  color: #9fc3d8;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.city-flow-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+}
+
+.city-flow-grid div {
+  min-width: 0;
+  padding: 0.36rem;
+  border-radius: 0.45rem;
+  background: rgba(20, 40, 56, 0.48);
+}
+
+.city-flow-grid b {
+  display: block;
+  color: #fff;
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.city-flow-grid span {
+  display: block;
+  margin-top: 0.16rem;
+  color: #9fc3d8;
+  font-size: 0.58rem;
+}
+
+.city-event-feed {
+  display: grid;
+  gap: 0.36rem;
+}
+
+.city-event-feed article {
+  padding: 0.48rem 0.55rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(150, 220, 255, 0.13);
+  background: rgba(20, 40, 56, 0.42);
+}
+
+.city-event-feed header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.city-event-feed header span,
+.city-event-feed header b {
+  color: #82a6bb;
+  font-size: 0.52rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.city-event-feed strong {
+  display: block;
+  color: #f0f8ff;
+  font-size: 0.68rem;
+  line-height: 1.25;
+}
+
+.city-event-feed p {
+  margin: 0.22rem 0 0;
+  color: #b9cfdd;
+  font-size: 0.62rem;
+  line-height: 1.34;
+}
+
+.city-empty {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: rgba(20, 40, 56, 0.35);
+  color: #82a6bb;
+  font-size: 0.66rem;
+}
+
 .city-hint {
   margin: 0.7rem 0 0;
   font-size: 0.66rem;
