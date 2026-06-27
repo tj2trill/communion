@@ -1,48 +1,58 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file gives Claude Code repository-specific guidance. The current `main`
+branch is the integrated app: do not assume the backend is missing, and do not
+replace the frontend with older branch work.
 
-## What this is
-Communion is a contained multi-model civilization simulator: an authoritative server-side
-simulation engine plus a 3D React/Three.js dashboard. AI "delegates" (OpenAI / xAI / Anthropic /
-Google, with a deterministic offline fallback) drive nations through diplomacy, economics
-(dual fiat + gold currency), and bounded conflict. The entire world is one `WorldState` snapshot
-the server owns and the client renders.
+## Collaboration Rules
 
-## Repository state (read first)
-- The working code is on branch `workbench/validation`. `main` currently holds only a README.
-- `package.json` scripts (`dev`, `start`, `test`) reference `server/index.ts` and
-  `server/tests/*.test.ts`, which DO NOT yet exist in the repo. Until the Express backend is
-  added, `npm run dev`, `npm start`, and `npm test` fail. The frontend typechecks via
-  `npm run check` and builds via the `vite build` half of `npm run build`.
-
-## Commands
-- `npm run check`  - `tsc --noEmit` typecheck (works today)
-- `npm run build`  - `tsc --noEmit && vite build` (frontend builds; needs server for full app)
-- `npm run dev`    - concurrently runs `tsx watch server/index.ts` + Vite (needs server/)
-- `npm start`      - `tsx server/index.ts` (needs server/)
-- `npm test`       - `node --import tsx --test server/tests/*.test.ts` (needs server/tests/)
-- Run a single test: `node --import tsx --test server/tests/<name>.test.ts`
-- Requires Node >= 20. Project is ESM (`"type": "module"`).
+- Preserve existing frontend work unless an integration bug requires a small,
+  targeted edit. Prefer backend/runtime changes when bringing the simulation to
+  life.
+- Before editing React, Three.js, CSS, textures, or model assets, inspect
+  `git diff`, `git status`, and the relevant component. Avoid wholesale rewrites
+  of `src/App.tsx`, `src/components/WorldScene.tsx`, `src/styles-*`, or
+  `public/`.
+- Branch `visuals/3d-models` contains older visual experiments. Cherry-pick
+  ideas only when needed; do not merge it wholesale because it removes the
+  server implementation and current data assets.
+- Keep AI autonomy bounded to the fictional simulation state machine. Models can
+  choose simulated civic actions, but they must not gain shell, browser,
+  account, infrastructure, weapons, or external-world authority.
 
 ## Architecture
-- **WorldState is the contract.** `src/lib/types.ts` defines the entire snapshot (delegates,
-  nations, relations, proposals, messages, wars, global market, turn/year). The server mutates it;
-  the client only reads it and posts intents. Keep server and client on the same `WorldState` shape.
-- **API** (`src/lib/api.ts`): `GET /api/state`; `POST /api/control {action, speed?}`;
-  `POST /api/scenario {scenario}`; `POST /api/prompt {text}`. Responses are `{ok, state}`.
-  The client polls `/api/state` (no SSE).
-- **Dev proxy**: Vite (port 5173) proxies `/api` to the Express server on
-  `http://localhost:8787` (see `vite.config.ts`). Validate request/response bodies with `zod`.
-- **Rendering** (`src/components/`): `WorldScene`/`WorldMap` render the 3D world via
-  `@react-three/fiber` + `drei`; `Humanoid` is the articulated delegate; panel components render
-  nation/economy/conflict/activity dashboards from `WorldState`.
-- **Domain notes**: economy splits `FiatCurrencyState` (expandable, drives inflation/debt) from
-  `GoldState` (conserved stock); `WarState` gates extreme actions behind `CatastrophicReview` /
-  `CatastrophicForecast`; `InstitutionState` covers 16 institution kinds; delegate actions are
-  the 21-variant `AgentActionPayload`; `ProviderId` is `'openai'|'xai'|'anthropic'|'google'`.
 
-## Conventions
-- ESM + TypeScript strict; no secrets in code - providers are configured via `.env`
-  (see `.env.example`).
-- The simulation must stay deterministic when no live provider is configured (offline fallback).
+- `server/world.ts`: authoritative world engine, economy, diplomacy, conflict,
+  free-land claims, gold conservation, scheduling, and deterministic test path.
+- `server/providers.ts`: live provider adapters for OpenAI, xAI, Anthropic, and
+  Gemini. Provider output is untrusted JSON and must pass schema validation
+  before mutating state.
+- `server/index.ts`: Express API, SSE stream, persistence, audit, and run loop.
+- `src/lib/types.ts`: shared `WorldState` contract between server and client.
+- `src/components/`: React/Three.js dashboard, globe, flags, delegates, panels,
+  and selected-country drilldown.
+- `public/`: checked-in runtime assets, including Earth textures and rigged
+  model files.
+
+## Commands
+
+- `npm install`: install dependencies from `package-lock.json`.
+- `npm run check`: strict TypeScript validation.
+- `npm test`: deterministic engine and provider-safety tests.
+- `npm run build`: type-check and production client build.
+- `npm run dev`: start server and Vite client for development.
+- `npm start`: serve the production build and API from port `8787`.
+
+Run `npm run check`, `npm test`, and `npm run build` before claiming the app is
+ready.
+
+## Runtime Notes
+
+- `COMMUNION_MODE=live` is strict: configured providers run as the actual model;
+  missing or failed providers are visibly blocked instead of mocked.
+- `COMMUNION_MODE=hybrid` allows configured providers to run live while missing
+  providers use deterministic fallback.
+- `COMMUNION_MODE=mock` is for offline tests and development only.
+- Provider keys stay in `.env`; never commit secrets or generated state.
+- Internal `turn` fields are audit/event counters. User-facing behavior should
+  be treated as continuous live flow, not fixed round-robin turns.

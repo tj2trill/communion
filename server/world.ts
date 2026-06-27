@@ -1010,7 +1010,13 @@ function activeDelegate(world: WorldState): DelegateState {
 
 function selectAutonomousDelegate(world: WorldState): DelegateState {
   const nowMs = Date.now();
-  return world.delegates
+  const hasLiveProvider = world.delegates.some((delegate) => providerConfigured(delegate.provider));
+  const candidates = world.mode === 'live' && hasLiveProvider
+    ? world.delegates.filter((delegate) => providerConfigured(delegate.provider))
+    : world.delegates;
+  const minActions = Math.min(...candidates.map((delegate) => delegate.turnCount));
+  const activePool = candidates.filter((delegate) => delegate.turnCount === minActions);
+  return activePool
     .map((delegate, index) => {
       const nation = getNation(world, delegate.nationId);
       const openWar = world.wars.some((war) => war.status === 'active' && (war.attackers.includes(nation.id) || war.defenders.includes(nation.id)));

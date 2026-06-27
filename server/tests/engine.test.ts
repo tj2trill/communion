@@ -133,6 +133,27 @@ test('live mode blocks missing provider credentials instead of faking a model ac
   }
 });
 
+test('live scheduler surfaces every missing provider without round robin turns', async () => {
+  const previousMode = process.env.COMMUNION_MODE;
+  try {
+    process.env.COMMUNION_MODE = 'live';
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.XAI_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    const world = createInitialWorld();
+    for (let i = 0; i < world.delegates.length; i += 1) {
+      await stepWorldWithProviders(world);
+      assert.equal(validateGoldConservation(world), true);
+    }
+    assert.equal(world.delegates.every((delegate) => delegate.lastProviderSource === 'blocked'), true);
+    assert.equal(world.delegates.every((delegate) => delegate.turnCount > 0), true);
+    assert.equal(new Set(world.messages.slice(-4).map((message) => message.fromDelegateId)).size, 4);
+  } finally {
+    process.env.COMMUNION_MODE = previousMode;
+  }
+});
+
 test('deterministic stepping advances delegates and maintains invariants', () => {
   process.env.COMMUNION_MODE = 'mock';
   const world = createInitialWorld();
