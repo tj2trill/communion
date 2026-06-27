@@ -10,7 +10,7 @@ import { GltfHuman } from './GltfHuman';
 import { Humanoid } from './Humanoid';
 import { RealisticGlobe } from './RealisticGlobe';
 import { GLOBE_RADIUS, lonLatToVector, simulationPointToLonLat, simulationPointToVector, surfaceQuaternion } from '../lib/globe';
-import type { AnatomyMode, CivilianCohortState, NationState, NeutralTerritoryState, OverlayMode, SettlementState, Vec2, WorldState } from '../lib/types';
+import type { AnatomyMode, CivilianCohortState, NationState, NeutralTerritoryState, OverlayMode, SettlementState, TransportKind, TransportLink, Vec2, WorldState } from '../lib/types';
 
 type LonLat = [number, number];
 type PolygonCoordinates = LonLat[][];
@@ -338,7 +338,11 @@ function fallbackSettlement(nation: NationState): SettlementState {
     resourceDemand: empty,
     resourceStockpiles: empty,
     foundedTurn: nation.foundedTurn,
-    growthRate: 0
+    growthRate: 0,
+    isCoastal: false,
+    hasPort: false,
+    hasAirport: true,
+    hasRailHub: true
   };
 }
 
@@ -427,6 +431,100 @@ function cohortColor(cohort: CivilianCohortState, nation: NationState) {
   return '#f5e4c9';
 }
 
+function transportColor(link: TransportLink, nation?: NationState) {
+  if (link.kind === 'rail') return '#d6f7ff';
+  if (link.kind === 'sea') return '#65d7ff';
+  if (link.kind === 'air') return '#f5f0ff';
+  return nation?.color ?? '#b8f6d0';
+}
+
+function transportAltitude(kind: TransportKind) {
+  if (kind === 'air') return 0.9;
+  if (kind === 'sea') return 0.18;
+  if (kind === 'rail') return 0.3;
+  return 0.26;
+}
+
+function TransportNetworkLayer({ world, selectedNationId }: { world: WorldState; selectedNationId: string }) {
+  return (
+    <>
+      {(world.transportLinks ?? []).map((link) => {
+        const nation = link.ownerNationId ? world.nations.find((item) => item.id === link.ownerNationId) : undefined;
+        const selected = link.ownerNationId === selectedNationId;
+        const points = link.waypoints.map((point) => simulationPointToVector(point, transportAltitude(link.kind)));
+        const opacity = selected ? (link.built ? 0.72 : 0.34) : (link.built ? 0.28 : 0.14);
+        return (
+          <Line
+            key={link.id}
+            points={points}
+            color={transportColor(link, nation)}
+            lineWidth={selected ? (link.kind === 'rail' ? 1.6 : 1.2) : 0.7}
+            dashed={link.kind === 'rail' || link.kind === 'sea' || !link.built}
+            dashSize={link.kind === 'rail' ? 0.09 : 0.16}
+            gapSize={link.kind === 'rail' ? 0.07 : 0.12}
+            transparent
+            opacity={opacity}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+function cohortRoutePoints(world: WorldState, cohort: CivilianCohortState, from: SettlementState, to: SettlementState) {
+  const links = (cohort.routeLinkIds ?? [])
+    .map((linkId) => world.transportLinks?.find((link) => link.id === linkId))
+    .filter((link): link is TransportLink => Boolean(link));
+  if (!links.length) return [from.position, cohort.position, to.position];
+  const points: Vec2[] = [];
+  let cursor = from.id;
+  for (const link of links) {
+    const waypoints = link.fromSettlementId === cursor ? link.waypoints : [...link.waypoints].reverse();
+    points.push(...(points.length ? waypoints.slice(1) : waypoints));
+    cursor = link.fromSettlementId === cursor ? link.toSettlementId : link.fromSettlementId;
+  }
+  return points.length ? points : [from.position, cohort.position, to.position];
+}
+
+function CohortVehicle({ mode, color, scale }: { mode: TransportKind; color: string; scale: number }) {
+  if (mode === 'rail') {
+    return (
+      <mesh castShadow>
+        <boxGeometry args={[scale * 0.7, scale * 0.45, scale * 1.8]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.22} roughness={0.46} metalness={0.16} />
+      </mesh>
+    );
+  }
+  if (mode === 'sea') {
+    return (
+      <mesh castShadow>
+        <coneGeometry args={[scale * 0.52, scale * 1.8, 4]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.18} roughness={0.58} metalness={0.08} />
+      </mesh>
+    );
+  }
+  if (mode === 'air') {
+    return (
+      <group>
+        <mesh castShadow>
+          <boxGeometry args={[scale * 1.8, scale * 0.22, scale * 0.5]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.24} roughness={0.5} />
+        </mesh>
+        <mesh castShadow>
+          <boxGeometry args={[scale * 0.36, scale * 0.22, scale * 1.55]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.24} roughness={0.5} />
+        </mesh>
+      </group>
+    );
+  }
+  return (
+    <mesh castShadow>
+      <capsuleGeometry args={[scale * 0.38, scale, 4, 6]} />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} roughness={0.56} />
+    </mesh>
+  );
+}
+
 function CivilianMobilityLayer({ world, selectedNationId }: { world: WorldState; selectedNationId: string }) {
   return (
     <>
@@ -434,23 +532,35 @@ function CivilianMobilityLayer({ world, selectedNationId }: { world: WorldState;
         const selected = nation.id === selectedNationId;
         const settlements = nation.settlements?.length ? nation.settlements : [fallbackSettlement(nation)];
         const cohorts = (nation.civilianCohorts ?? []).slice(0, selected ? 8 : 3);
-        return cohorts.map((cohort) => {
+        return cohorts.map((cohort, cohortIndex) => {
           const from = settlements.find((settlement) => settlement.id === cohort.fromSettlementId);
           const to = settlements.find((settlement) => settlement.id === cohort.toSettlementId);
           if (!from || !to) return null;
-          const start = simulationPointToVector(from.position, selected ? 0.34 : 0.3);
-          const end = simulationPointToVector(to.position, selected ? 0.34 : 0.3);
-          const mid = simulationPointToVector(cohort.position, selected ? 0.5 : 0.42);
-          const position = simulationPointToVector(cohort.position, selected ? 0.38 : 0.34);
+          const linePoints = cohortRoutePoints(world, cohort, from, to).map((point) => simulationPointToVector(point, selected ? 0.42 : 0.34));
+          const position = simulationPointToVector(cohort.position, cohort.mode === 'air' ? 0.92 : selected ? 0.46 : 0.38);
           const color = cohortColor(cohort, nation);
           const scale = Math.min(0.08, 0.026 + Math.sqrt(cohort.representedPopulation) / 520000);
           return (
             <group key={`civilian-flow-${cohort.id}`}>
-              <Line points={[start, mid, end]} color={color} lineWidth={selected ? 1.2 : 0.75} transparent opacity={selected ? 0.5 : 0.26} />
-              <mesh position={position} quaternion={surfaceQuaternion(position)}>
-                <capsuleGeometry args={[scale * 0.38, scale, 4, 6]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={cohort.stress > 55 ? 0.45 : 0.18} roughness={0.56} />
-              </mesh>
+              <Line points={linePoints} color={color} lineWidth={selected ? 1.15 : 0.7} transparent opacity={cohort.blocked ? 0.18 : selected ? 0.48 : 0.24} dashed={cohort.blocked} dashSize={0.1} gapSize={0.08} />
+              <group position={position} quaternion={surfaceQuaternion(position)}>
+                {cohort.blocked ? (
+                  <mesh castShadow>
+                    <octahedronGeometry args={[scale * 0.8, 0]} />
+                    <meshStandardMaterial color="#ff6f6f" emissive="#ff6f6f" emissiveIntensity={0.5} roughness={0.48} />
+                  </mesh>
+                ) : (
+                  <CohortVehicle mode={cohort.mode ?? 'road'} color={color} scale={scale} />
+                )}
+              </group>
+              {selected && cohortIndex < 3 && (
+                <Html center position={simulationPointToVector(cohort.position, cohort.mode === 'air' ? 1.25 : 0.72).toArray()} distanceFactor={10} className="map-label-wrapper">
+                  <div className="map-label cohort-flow-label" style={{ borderColor: color }}>
+                    <strong>{cohort.blocked ? 'Needs route' : cohort.purpose}</strong>
+                    <span>{cohort.mode} · {(cohort.representedPopulation / 1_000_000).toFixed(1)}M · stress {cohort.stress.toFixed(0)}</span>
+                  </div>
+                </Html>
+              )}
             </group>
           );
         });
@@ -475,6 +585,7 @@ function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectN
       <EarthCartographyLayer overlay={overlay} />
       <NationSurface world={world} selectedNationId={selectedNationId} onSelectNation={onSelectNation} />
       <NeutralSurface world={world} />
+      <TransportNetworkLayer world={world} selectedNationId={selectedNationId} />
       <CityLayer world={world} selectedNationId={selectedNationId} />
       <CivilizationLayer world={world} selectedNationId={selectedNationId} />
       <CivilianMobilityLayer world={world} selectedNationId={selectedNationId} />

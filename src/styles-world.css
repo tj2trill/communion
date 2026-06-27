@@ -184,6 +184,13 @@
   white-space: nowrap;
 }
 
+.cohort-flow-label {
+  min-width: 84px;
+  padding: 4px 7px;
+  transform: scale(0.72);
+  transform-origin: center;
+}
+
 .avatar-label-wrapper,
 .speech-wrapper {
   pointer-events: none;

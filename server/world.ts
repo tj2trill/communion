@@ -26,10 +26,14 @@ import type {
   ResourceState,
   SimulationMode,
   SettlementState,
+  TransportKind,
+  TransportLink,
   Vec2,
   WarState,
   WorldState
 } from '../src/lib/types';
+import { findRoute, pointAlongPolyline, polylineLength } from './routing';
+import { isCoastal as terrainIsCoastal, landPolygons, segmentOnLand } from './terrain';
 import {
   callModelProvider,
   envModel,
@@ -296,7 +300,11 @@ function createSettlements(nationId: string, area: NationState['territory'], pop
       resourceDemand: settlementResourceDemand(settlementPopulation, builtArea),
       resourceStockpiles: addResources(emptyResources(), resourceStockpile(index), 0.08 + settlementIndex * 0.012),
       foundedTurn: 0,
-      growthRate: 0
+      growthRate: 0,
+      isCoastal: false,
+      hasPort: false,
+      hasAirport: settlementIndex <= 1,
+      hasRailHub: settlementIndex <= 2
     };
   });
 }
@@ -336,7 +344,9 @@ function createCivilianCohorts(nationId: string, settlements: SettlementState[],
       representedPopulation: Math.max(250_000, Math.round(population / (420 + cohortIndex * 34))),
       purpose,
       speed: round(0.012 + (cohortIndex % 4) * 0.004 + (purpose === 'trade' ? 0.004 : 0), 4),
-      stress: 8 + cohortIndex * 2
+      stress: 8 + cohortIndex * 2,
+      mode: 'road',
+      blocked: false
     };
   });
 }
@@ -349,6 +359,10 @@ function ensureNationCivilization(nation: NationState, index: number) {
     settlement.resourceDemand ??= settlementResourceDemand(settlement.population, settlement.builtArea);
     settlement.resourceStockpiles ??= emptyResources();
     settlement.growthRate ??= 0;
+    settlement.isCoastal ??= false;
+    settlement.hasPort ??= false;
+    settlement.hasAirport ??= settlement.kind === 'capital' || settlement.kind === 'metro';
+    settlement.hasRailHub ??= settlement.kind === 'capital' || settlement.kind === 'metro' || settlement.kind === 'industrial';
   }
   nation.civilianCohorts = nation.civilianCohorts?.length ? nation.civilianCohorts : createCivilianCohorts(nation.id, nation.settlements, nation.social.population, index);
   for (const cohort of nation.civilianCohorts) {
@@ -358,11 +372,13 @@ function ensureNationCivilization(nation: NationState, index: number) {
     cohort.purpose ??= 'commute';
     cohort.speed ??= 0.012;
     cohort.stress ??= 10;
+    cohort.mode ??= 'road';
+    cohort.blocked ??= false;
     if (!nation.settlements.some((settlement) => settlement.id === cohort.fromSettlementId)) cohort.fromSettlementId = nation.settlements[0]?.id ?? '';
     if (!nation.settlements.some((settlement) => settlement.id === cohort.toSettlementId)) cohort.toSettlementId = nation.settlements[1]?.id ?? nation.settlements[0]?.id ?? '';
     const from = nation.settlements.find((settlement) => settlement.id === cohort.fromSettlementId);
     const to = nation.settlements.find((settlement) => settlement.id === cohort.toSettlementId);
-    if (from && to) cohort.position = pointBetween(from.position, to.position, cohort.progress, 0.16);
+    if (from && to && !cohort.position) cohort.position = pointBetween(from.position, to.position, cohort.progress, 0.16);
   }
   rebalanceSettlementPopulation(nation);
 }
@@ -377,6 +393,209 @@ function rebalanceSettlementPopulation(nation: NationState) {
     settlement.population = Math.max(0, Math.round(currentUrbanPopulation > 0 ? settlement.population * scale : targetUrbanPopulation * scale));
     settlement.resourceDemand = settlementResourceDemand(settlement.population, settlement.builtArea);
   }
+}
+
+function transportId(kind: TransportKind, fromSettlementId: string, toSettlementId: string): string {
+  const [a, b] = [fromSettlementId, toSettlementId].sort();
+  return `${kind}-${a}-${b}`;
+}
+
+function subdivideSegment(a: Vec2, b: Vec2, segments = 5): Vec2[] {
+  return Array.from({ length: segments + 1 }, (_, index) => {
+    const progress = index / segments;
+    return {
+      x: round(a.x + (b.x - a.x) * progress),
+      z: round(a.z + (b.z - a.z) * progress)
+    };
+  });
+}
+
+function linkLength(link: TransportLink): number {
+  return Math.max(0.001, polylineLength(link.waypoints));
+}
+
+function ensureTransportNetwork(world: WorldState) {
+  world.transportLinks ??= [];
+  const polygons = landPolygons(world);
+  const existingIds = new Set(world.transportLinks.map((link) => link.id));
+
+  for (const nation of world.nations) {
+    for (const settlement of nation.settlements) {
+      settlement.isCoastal = terrainIsCoastal(settlement.position, polygons);
+      settlement.hasPort = settlement.hasPort || (settlement.isCoastal && ['capital', 'metro', 'frontier'].includes(settlement.kind));
+      settlement.hasAirport = settlement.hasAirport || settlement.kind === 'capital' || settlement.kind === 'metro';
+      settlement.hasRailHub = settlement.hasRailHub || ['capital', 'metro', 'industrial'].includes(settlement.kind);
+    }
+
+    for (let i = 0; i < nation.settlements.length; i += 1) {
+      for (let j = i + 1; j < nation.settlements.length; j += 1) {
+        const from = nation.settlements[i];
+        const to = nation.settlements[j];
+        if (!segmentOnLand(from.position, to.position, polygons, 22)) continue;
+        const roadId = transportId('road', from.id, to.id);
+        if (!existingIds.has(roadId)) {
+          const length = Math.hypot(to.position.x - from.position.x, to.position.z - from.position.z);
+          world.transportLinks.push({
+            id: roadId,
+            scope: 'nation',
+            ownerNationId: nation.id,
+            kind: 'road',
+            fromSettlementId: from.id,
+            toSettlementId: to.id,
+            waypoints: subdivideSegment(from.position, to.position, Math.max(3, Math.ceil(length / 2.4))),
+            built: true,
+            progress: 100,
+            capacity: Math.round(8 + nation.social.infrastructure / 10),
+            condition: clamp(74 + nation.social.infrastructure / 5 - length * 0.2)
+          });
+          existingIds.add(roadId);
+        }
+      }
+    }
+
+    const capital = nation.settlements.find((settlement) => settlement.kind === 'capital');
+    const railTargets = nation.settlements.filter((settlement) => settlement.hasRailHub && settlement.id !== capital?.id).slice(0, 2);
+    for (const target of railTargets) {
+      if (!capital || !segmentOnLand(capital.position, target.position, polygons, 22)) continue;
+      const railId = transportId('rail', capital.id, target.id);
+      if (existingIds.has(railId)) continue;
+      const length = Math.hypot(target.position.x - capital.position.x, target.position.z - capital.position.z);
+      world.transportLinks.push({
+        id: railId,
+        scope: 'nation',
+        ownerNationId: nation.id,
+        kind: 'rail',
+        fromSettlementId: capital.id,
+        toSettlementId: target.id,
+        waypoints: subdivideSegment(capital.position, target.position, Math.max(4, Math.ceil(length / 1.8))),
+        built: true,
+        progress: 100,
+        capacity: Math.round(14 + nation.economy.industrialCapacity / 8),
+        condition: clamp(70 + nation.social.infrastructure / 4 - length * 0.16)
+      });
+      existingIds.add(railId);
+    }
+  }
+}
+
+function orientedWaypoints(link: TransportLink, fromSettlementId: string): Vec2[] {
+  return link.fromSettlementId === fromSettlementId ? link.waypoints : [...link.waypoints].reverse();
+}
+
+function routePosition(legs: TransportLink[], fromSettlementId: string, progress: number): { position: Vec2; link?: TransportLink } {
+  if (legs.length === 0) {
+    return { position: { x: 0, z: 0 } };
+  }
+  const oriented = [];
+  let cursor = fromSettlementId;
+  for (const leg of legs) {
+    const points = orientedWaypoints(leg, cursor);
+    oriented.push({ leg, points, length: linkLength({ ...leg, waypoints: points }) });
+    cursor = leg.fromSettlementId === cursor ? leg.toSettlementId : leg.fromSettlementId;
+  }
+  const totalLength = oriented.reduce((sum, item) => sum + item.length, 0);
+  const target = Math.max(0, Math.min(1, progress)) * totalLength;
+  let travelled = 0;
+  for (const item of oriented) {
+    if (travelled + item.length >= target) {
+      const local = item.length === 0 ? 0 : (target - travelled) / item.length;
+      const point = pointAlongPolyline(item.points, local);
+      return { position: { x: round(point.x), z: round(point.z) }, link: item.leg };
+    }
+    travelled += item.length;
+  }
+  const finalLeg = oriented.at(-1);
+  return { position: finalLeg?.points.at(-1) ?? { x: 0, z: 0 }, link: finalLeg?.leg };
+}
+
+function resolveCohortRoute(world: WorldState, nation: NationState, cohort: CivilianCohortState): TransportLink[] | null {
+  const from = nation.settlements.find((settlement) => settlement.id === cohort.fromSettlementId);
+  const to = nation.settlements.find((settlement) => settlement.id === cohort.toSettlementId);
+  if (!from || !to) return null;
+  const route = findRoute(from.id, to.id, world.transportLinks);
+  if (!route || (route.legs.length === 0 && from.id !== to.id)) {
+    cohort.blocked = true;
+    cohort.blockReason = 'no-route';
+    cohort.routeLinkIds = [];
+    cohort.linkId = undefined;
+    cohort.position = { ...from.position };
+    return null;
+  }
+  cohort.blocked = false;
+  cohort.blockReason = undefined;
+  cohort.routeLinkIds = route.legs.map((link) => link.id);
+  const point = routePosition(route.legs, from.id, cohort.progress);
+  cohort.linkId = point.link?.id;
+  cohort.mode = point.link?.kind ?? cohort.mode ?? 'road';
+  cohort.position = point.position;
+  return route.legs;
+}
+
+function ensureCivilianRoutes(world: WorldState) {
+  for (const nation of world.nations) {
+    for (const cohort of nation.civilianCohorts) {
+      resolveCohortRoute(world, nation, cohort);
+    }
+  }
+}
+
+function buildTransport(world: WorldState, nation: NationState, delegate: DelegateState, action: AgentActionPayload) {
+  ensureTransportNetwork(world);
+  const from = nation.settlements.find((settlement) => settlement.id === action.fromSettlementId) ?? nation.settlements[0];
+  const to = nation.settlements.find((settlement) => settlement.id === action.toSettlementId);
+  if (!from) return;
+
+  if (action.type === 'build_port') {
+    if (!from.isCoastal) {
+      addDecision(world, delegate.id, 'build_port', 'Port survey deferred', `${nation.name} surveyed ${from.name}, but the settlement is not coastal.`, ['No external-world construction occurs.', 'Transport planning remains inside the simulation.'], false, 'routine');
+      return;
+    }
+    from.hasPort = true;
+    from.infrastructure = round(clamp(from.infrastructure + 1.2));
+    addDecision(world, delegate.id, 'build_port', 'Port authority chartered', `${nation.name} opened a simulated port authority at ${from.name}.`, ['Sea-lane construction is now possible for this settlement.'], true, 'routine');
+    return;
+  }
+
+  if (action.type === 'build_airport') {
+    from.hasAirport = true;
+    from.infrastructure = round(clamp(from.infrastructure + 1.1));
+    addDecision(world, delegate.id, 'build_airport', 'Airport district approved', `${nation.name} approved a simulated airport district at ${from.name}.`, ['Air-link construction is now possible for this settlement.'], true, 'routine');
+    return;
+  }
+
+  if (!to || from.id === to.id) return;
+  const kind: TransportKind = action.type === 'build_rail' ? 'rail' : 'road';
+  const polygons = landPolygons(world);
+  if (!segmentOnLand(from.position, to.position, polygons, 22)) {
+    addDecision(world, delegate.id, action.type, 'Transport corridor blocked by terrain', `${nation.name} surveyed ${from.name} to ${to.name}, but no continuous land corridor is passable.`, ['Cohorts on that path remain route-blocked until ports, airports, or alternate links exist.'], false, 'routine');
+    return;
+  }
+
+  const linkId = transportId(kind, from.id, to.id);
+  const existing = world.transportLinks.find((link) => link.id === linkId);
+  if (existing) {
+    existing.built = true;
+    existing.progress = 100;
+    existing.condition = round(clamp(existing.condition + 5));
+    addDecision(world, delegate.id, action.type, `${kind} link rehabilitated`, `${nation.name} restored the ${kind} corridor between ${from.name} and ${to.name}.`, ['Route capacity and condition improved.'], true, 'routine');
+    return;
+  }
+
+  const length = Math.hypot(to.position.x - from.position.x, to.position.z - from.position.z);
+  world.transportLinks.push({
+    id: linkId,
+    scope: 'nation',
+    ownerNationId: nation.id,
+    kind,
+    fromSettlementId: from.id,
+    toSettlementId: to.id,
+    waypoints: subdivideSegment(from.position, to.position, Math.max(kind === 'rail' ? 4 : 3, Math.ceil(length / (kind === 'rail' ? 1.8 : 2.4)))),
+    built: true,
+    progress: 100,
+    capacity: Math.round((kind === 'rail' ? 14 : 8) + nation.social.infrastructure / (kind === 'rail' ? 8 : 10)),
+    condition: clamp(70 + nation.social.infrastructure / 5 - length * 0.18)
+  });
+  addDecision(world, delegate.id, action.type, `${kind} link opened`, `${nation.name} opened a simulated ${kind} link from ${from.name} to ${to.name}.`, ['Civilian cohorts can route through the new transport link.'], true, 'routine');
 }
 
 function createNation(index: number): NationState {
@@ -560,6 +779,7 @@ export function createInitialWorld(seed = 42): WorldState {
     messages: [],
     decisions: [],
     wars: [],
+    transportLinks: [],
     market: initialMarket(nations),
     internationalInstitutions: institutionsWorld(nations),
     providerStatus: providerStatuses(),
@@ -705,6 +925,7 @@ function updateDelegate(
 }
 
 export function recomputeWorld(world: WorldState): WorldState {
+  world.transportLinks ??= [];
   for (const [index, nation] of world.nations.entries()) {
     ensureNationCivilization(nation, index);
     const fiatValue = nation.economy.fiat.moneySupply * nation.economy.fiat.exchangeRateToWorld;
@@ -712,6 +933,8 @@ export function recomputeWorld(world: WorldState): WorldState {
     nation.economy.gold.backingRatio = round((goldValue / Math.max(1, fiatValue)) * 100, 3);
     nation.economy.gdpPerCapita = round((nation.economy.gdp * 1_000_000_000) / Math.max(1, nation.social.population), 2);
   }
+  ensureTransportNetwork(world);
+  ensureCivilianRoutes(world);
   world.market.exchangeRates = Object.fromEntries(world.nations.map((nation) => [nation.economy.fiat.code, nation.economy.fiat.exchangeRateToWorld]));
   world.market.globalInflation = round(world.nations.reduce((sum, nation) => sum + nation.economy.fiat.inflation, 0) / world.nations.length);
   world.market.tradeVolume = round(world.nations.reduce((sum, nation) => sum + nation.economy.tradeVolume, 0));
@@ -1160,6 +1383,8 @@ function applyAction(world: WorldState, delegate: DelegateState, action: AgentAc
       territoryItem.contestLevel = round(clamp(territoryItem.contestLevel + 1.5));
       addDecision(world, delegate.id, 'patrol_frontier', `${nation.name} patrolled ${territoryItem.name}`, `${nation.name} moved through free land without changing ownership.`, ['Frontier presence is visible to rival claimants.'], false, 'routine');
     }
+  } else if (action.type === 'build_road' || action.type === 'build_rail' || action.type === 'build_port' || action.type === 'build_airport') {
+    buildTransport(world, nation, delegate, action);
   }
 }
 
@@ -1266,9 +1491,13 @@ function retargetCivilianCohort(nation: NationState, cohort: CivilianCohortState
   cohort.fromSettlementId = cohort.toSettlementId || nation.settlements[0].id;
   cohort.toSettlementId = nextTarget.id;
   cohort.progress = 0;
+  cohort.linkId = undefined;
+  cohort.routeLinkIds = undefined;
+  cohort.blocked = false;
+  cohort.blockReason = undefined;
 }
 
-function evolveCivilianMobility(nation: NationState, activeWars: number, pulseIndex: number, intensity = 1) {
+function evolveCivilianMobility(world: WorldState, nation: NationState, activeWars: number, pulseIndex: number, intensity = 1) {
   const displacementShare = nation.social.displacement / Math.max(1, nation.social.population);
   const resourceStrain = Math.max(0, 70 - nation.economy.foodSecurity) * 0.18 + Math.max(0, 65 - nation.social.stability) * 0.12;
   const infrastructureSpeed = Math.max(0.45, nation.social.infrastructure / 85);
@@ -1281,13 +1510,24 @@ function evolveCivilianMobility(nation: NationState, activeWars: number, pulseIn
     cohort.purpose = pressurePurpose;
     const purposeSpeed = cohort.purpose === 'displacement' ? 0.018 : cohort.purpose === 'trade' ? 0.014 : cohort.purpose === 'aid' ? 0.016 : 0.012;
     cohort.speed = round(clamp(purposeSpeed * infrastructureSpeed, 0.004, 0.04), 4);
+    let route = resolveCohortRoute(world, nation, cohort);
+    if (!route) {
+      cohort.stress = round(clamp(cohort.stress + 0.08 + (resourceStrain + warStress) * 0.02 * intensity));
+      cohort.representedPopulation = Math.max(100_000, Math.round(nation.social.population / (520 + cohort.id.length * 9)));
+      continue;
+    }
     cohort.progress = round(cohort.progress + cohort.speed * intensity, 4);
     if (cohort.progress >= 1) {
       retargetCivilianCohort(nation, cohort, pulseIndex);
+      route = resolveCohortRoute(world, nation, cohort);
     }
-    const routeFrom = nation.settlements.find((settlement) => settlement.id === cohort.fromSettlementId) ?? from;
-    const routeTo = nation.settlements.find((settlement) => settlement.id === cohort.toSettlementId) ?? to;
-    cohort.position = pointBetween(routeFrom.position, routeTo.position, cohort.progress, 0.18 + (cohort.id.length % 5) * 0.025);
+    if (route) {
+      const routeFrom = nation.settlements.find((settlement) => settlement.id === cohort.fromSettlementId) ?? from;
+      const point = routePosition(route, routeFrom.id, cohort.progress);
+      cohort.position = point.position;
+      cohort.linkId = point.link?.id;
+      cohort.mode = point.link?.kind ?? cohort.mode;
+    }
     cohort.representedPopulation = Math.max(100_000, Math.round(nation.social.population / (520 + cohort.id.length * 9)));
     cohort.stress = round(clamp(cohort.stress + (resourceStrain + warStress - nation.social.health * 0.04) * 0.015 * intensity));
   }
@@ -1325,7 +1565,7 @@ export function pulseWorld(world: WorldState, pulseIndex = world.turn + 1): Worl
     nation.social.stability = round(clamp(nation.social.stability + (nation.social.approval - 65) * 0.002 - nation.security.warWeariness * 0.001));
     nation.social.infrastructure = round(clamp(nation.social.infrastructure - world.stats.activeWars * 0.005 + 0.002));
     evolveNationCivilization(nation, 0.45);
-    evolveCivilianMobility(nation, world.stats.activeWars, pulseIndex, 1);
+    evolveCivilianMobility(world, nation, world.stats.activeWars, pulseIndex, 1);
   }
   for (const territoryItem of world.neutralTerritories) {
     const claimPressure = territoryItem.claimantNationIds.length * 0.04;
@@ -1486,6 +1726,8 @@ function speechFor(world: WorldState, delegate: DelegateState, action: AgentActi
   if (action.type === 'claim_land') return `${nation.name} is thinking through a frontier claim: resources, civilians, legitimacy, and likely retaliation all matter.`;
   if (action.type === 'contest_land') return `${nation.name} is weighing whether contesting free land is worth civilian disruption and diplomatic blowback.`;
   if (action.type === 'patrol_frontier') return `${nation.name} is moving through unclaimed land to understand terrain, resources, and settlement risk.`;
+  if (action.type === 'build_road' || action.type === 'build_rail') return `${nation.name} is planning transport links so civilians follow terrain-aware routes instead of crossing open water.`;
+  if (action.type === 'build_port' || action.type === 'build_airport') return `${nation.name} is expanding transport access while keeping every action inside the fictional state machine.`;
   return `${nation.name} reviews money, law, confidence, diplomacy, and public welfare before acting.`;
 }
 

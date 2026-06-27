@@ -16,6 +16,8 @@ import {
   totalGold,
   validateGoldConservation
 } from '../world';
+import { findRoute } from '../routing';
+import { landPolygons, segmentOnLand } from '../terrain';
 
 process.env.AUTO_START = 'false';
 process.env.COMMUNION_MODE = 'mock';
@@ -51,10 +53,16 @@ test('initial nations have persistent settlements and resource stockpiles', () =
     assert.ok(nation.settlements.every((settlement) => settlement.resourceDemand.water > 0));
     assert.ok(nation.civilianCohorts.every((cohort) => cohort.representedPopulation > 0));
     assert.ok(nation.civilianCohorts.every((cohort) => cohort.fromSettlementId !== cohort.toSettlementId));
+    assert.ok(nation.civilianCohorts.every((cohort) => cohort.mode === 'road' || cohort.mode === 'rail'));
+    assert.ok(nation.civilianCohorts.every((cohort) => !cohort.blocked && cohort.routeLinkIds?.length));
+    assert.ok(nation.settlements.every((settlement) => typeof settlement.isCoastal === 'boolean'));
     assert.ok(nation.resources.trees > 0);
     assert.ok(nation.resources.stone > 0);
     assert.ok(nation.resources.water > 0);
   }
+  assert.ok(world.transportLinks.length >= 40);
+  assert.ok(world.transportLinks.some((link) => link.kind === 'road' && link.built));
+  assert.ok(world.transportLinks.some((link) => link.kind === 'rail' && link.built));
 });
 
 test('recompute backfills civilian cohorts for restored worlds', () => {
@@ -62,8 +70,38 @@ test('recompute backfills civilian cohorts for restored worlds', () => {
   for (const nation of world.nations) {
     delete (nation as { civilianCohorts?: unknown }).civilianCohorts;
   }
+  delete (world as { transportLinks?: unknown }).transportLinks;
   recomputeWorld(world);
   assert.equal(world.nations.every((nation) => nation.civilianCohorts.length >= 4), true);
+  assert.ok(world.transportLinks.length >= 40);
+  assert.equal(validateGoldConservation(world), true);
+});
+
+test('terrain passability and transport routing constrain movement', () => {
+  const world = createInitialWorld();
+  const polygons = landPolygons(world);
+  const localA = world.nations[0].settlements[0];
+  const localB = world.nations[0].settlements[1];
+  const separated = world.nations[2].settlements[0];
+  assert.equal(segmentOnLand(localA.position, localB.position, polygons, 22), true);
+  assert.equal(segmentOnLand(localA.position, separated.position, polygons, 22), false);
+  assert.ok(findRoute(localA.id, localB.id, world.transportLinks));
+  assert.equal(findRoute(localA.id, separated.id, world.transportLinks), null);
+});
+
+test('civilian cohorts block instead of moving when no route is built', () => {
+  const world = createInitialWorld();
+  const nation = world.nations[0];
+  const cohort = nation.civilianCohorts[0];
+  const before = { ...cohort.position };
+  for (const link of world.transportLinks.filter((item) => item.ownerNationId === nation.id)) {
+    link.built = false;
+  }
+  pulseWorld(world, 17);
+  assert.equal(cohort.blocked, true);
+  assert.equal(cohort.blockReason, 'no-route');
+  assert.deepEqual(cohort.position, nation.settlements.find((settlement) => settlement.id === cohort.fromSettlementId)?.position);
+  assert.notDeepEqual(cohort.position, before);
   assert.equal(validateGoldConservation(world), true);
 });
 

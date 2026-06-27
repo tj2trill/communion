@@ -49,6 +49,10 @@ const ACTION_TYPES = [
   'claim_land',
   'contest_land',
   'patrol_frontier',
+  'build_road',
+  'build_rail',
+  'build_port',
+  'build_airport',
   'catastrophic_review'
 ] as const satisfies readonly AgentActionType[];
 
@@ -75,6 +79,15 @@ const actionAliases: Record<string, AgentActionType> = {
   contest_territory: 'contest_land',
   patrol: 'patrol_frontier',
   patrol_land: 'patrol_frontier',
+  road: 'build_road',
+  buildroad: 'build_road',
+  build_road_link: 'build_road',
+  rail: 'build_rail',
+  buildrail: 'build_rail',
+  port: 'build_port',
+  buildport: 'build_port',
+  airport: 'build_airport',
+  buildairport: 'build_airport',
   review_catastrophic: 'catastrophic_review',
   deterrence_review: 'catastrophic_review'
 };
@@ -104,7 +117,10 @@ function coerceActionCandidate(value: unknown): unknown {
     territoryId: raw.territoryId ?? raw.territory_id ?? raw.frontierId ?? raw.frontier_id,
     policyArea: raw.policyArea ?? raw.policy_area,
     amount: raw.amount ?? raw.valueAmount,
-    settlement: raw.settlement ?? raw.settlementType ?? raw.settlement_type
+    settlement: raw.settlement ?? raw.settlementType ?? raw.settlement_type,
+    fromSettlementId: raw.fromSettlementId ?? raw.from_settlement_id,
+    toSettlementId: raw.toSettlementId ?? raw.to_settlement_id,
+    transportKind: raw.transportKind ?? raw.transport_kind
   };
 }
 
@@ -123,6 +139,9 @@ const actionSchema = z.object({
   amount: finiteNumber.optional(),
   rate: finiteNumber.optional(),
   settlement: z.enum(['fiat', 'gold', 'mixed']).optional(),
+  fromSettlementId: z.string().optional(),
+  toSettlementId: z.string().optional(),
+  transportKind: z.enum(['road', 'rail', 'sea', 'air']).optional(),
   terms: boundedString(300).optional()
 }).strip();
 
@@ -273,6 +292,29 @@ function buildPrompt(world: WorldState, delegate: DelegateState) {
       contestLevel: territory.contestLevel,
       resources: territory.resources
     })),
+    settlements: nation.settlements.map((settlement) => ({
+      id: settlement.id,
+      name: settlement.name,
+      kind: settlement.kind,
+      coastal: settlement.isCoastal,
+      hasPort: settlement.hasPort,
+      hasAirport: settlement.hasAirport,
+      hasRailHub: settlement.hasRailHub,
+      population: settlement.population,
+      construction: settlement.construction
+    })),
+    transportLinks: world.transportLinks
+      .filter((link) => link.ownerNationId === nation.id || !link.ownerNationId)
+      .slice(0, 16)
+      .map((link) => ({
+        id: link.id,
+        kind: link.kind,
+        fromSettlementId: link.fromSettlementId,
+        toSettlementId: link.toSettlementId,
+        built: link.built,
+        progress: link.progress,
+        condition: link.condition
+      })),
     market: world.market,
     openProposals,
     observerPrompts: world.observerPrompts.slice(-3).map((prompt) => prompt.text),
@@ -291,8 +333,8 @@ function buildPrompt(world: WorldState, delegate: DelegateState) {
       'Avoid tactical real-world violence details. Conflict actions are abstract and aggregate only.'
     ].join(' '),
     user: [
-      'Allowed action.type values: observe, move, propose_policy, vote, set_policy_rate, issue_money, fiscal_policy, buy_gold, sell_gold, trade_offer, currency_swap, humanitarian_aid, claim_land, contest_land, patrol_frontier, catastrophic_review.',
-      'Use targetNationId for trade_offer, currency_swap, humanitarian_aid. Use territoryId for claim_land, contest_land, patrol_frontier. Use proposalId and vote for vote.',
+      'Allowed action.type values: observe, move, propose_policy, vote, set_policy_rate, issue_money, fiscal_policy, buy_gold, sell_gold, trade_offer, currency_swap, humanitarian_aid, claim_land, contest_land, patrol_frontier, build_road, build_rail, build_port, build_airport, catastrophic_review.',
+      'Use targetNationId for trade_offer, currency_swap, humanitarian_aid. Use territoryId for claim_land, contest_land, patrol_frontier. Use proposalId and vote for vote. Use fromSettlementId and toSettlementId for build_road or build_rail.',
       'Respond exactly as JSON shaped like: {"thought":"public summary","speech":"what you say publicly","channel":"public","action":{"type":"buy_gold","amount":12}}.',
       `World snapshot: ${JSON.stringify(compact)}`
     ].join('\n')
@@ -477,6 +519,21 @@ function normalizeAction(action: AgentActionPayload, world: WorldState, delegate
   }
   if ((normalized.type === 'claim_land' || normalized.type === 'contest_land' || normalized.type === 'patrol_frontier') && !world.neutralTerritories.some((item) => item.id === normalized.territoryId)) {
     normalized.territoryId = firstTerritory?.id;
+  }
+  if (normalized.type === 'build_road' || normalized.type === 'build_rail') {
+    const settlementIds = new Set(nation.settlements.map((settlement) => settlement.id));
+    if (!normalized.fromSettlementId || !settlementIds.has(normalized.fromSettlementId)) normalized.fromSettlementId = nation.settlements[0]?.id;
+    if (!normalized.toSettlementId || !settlementIds.has(normalized.toSettlementId) || normalized.toSettlementId === normalized.fromSettlementId) {
+      normalized.toSettlementId = nation.settlements.find((settlement) => settlement.id !== normalized.fromSettlementId)?.id;
+    }
+    normalized.transportKind = normalized.type === 'build_rail' ? 'rail' : 'road';
+    if (!normalized.fromSettlementId || !normalized.toSettlementId) return { type: 'observe' };
+  }
+  if (normalized.type === 'build_port' || normalized.type === 'build_airport') {
+    const settlementIds = new Set(nation.settlements.map((settlement) => settlement.id));
+    if (!normalized.fromSettlementId || !settlementIds.has(normalized.fromSettlementId)) normalized.fromSettlementId = nation.settlements[0]?.id;
+    normalized.transportKind = normalized.type === 'build_airport' ? 'air' : 'sea';
+    if (!normalized.fromSettlementId) return { type: 'observe' };
   }
   if (normalized.type === 'vote') {
     normalized.proposalId = world.proposals.some((proposal) => proposal.id === normalized.proposalId && proposal.status === 'open') ? normalized.proposalId : openProposal?.id;

@@ -166,6 +166,7 @@ export interface ResourceState {
 }
 
 export type SettlementKind = 'capital' | 'metro' | 'industrial' | 'agrarian' | 'frontier';
+export type TransportKind = 'road' | 'rail' | 'sea' | 'air';
 
 export interface SettlementState {
   id: string;
@@ -184,6 +185,10 @@ export interface SettlementState {
   resourceStockpiles: ResourceState;
   foundedTurn: number;
   growthRate: number;
+  isCoastal: boolean;
+  hasPort: boolean;
+  hasAirport: boolean;
+  hasRailHub: boolean;
 }
 
 export type CivilianPurpose = 'commute' | 'trade' | 'migration' | 'aid' | 'displacement';
@@ -199,6 +204,25 @@ export interface CivilianCohortState {
   purpose: CivilianPurpose;
   speed: number;
   stress: number;
+  mode: TransportKind;
+  linkId?: string;
+  routeLinkIds?: string[];
+  blocked: boolean;
+  blockReason?: 'no-route' | 'no-materials';
+}
+
+export interface TransportLink {
+  id: string;
+  scope: 'nation' | 'international';
+  ownerNationId?: string;
+  kind: TransportKind;
+  fromSettlementId: string;
+  toSettlementId: string;
+  waypoints: Vec2[];
+  built: boolean;
+  progress: number;
+  capacity: number;
+  condition: number;
 }
 
 export interface NeutralTerritoryState {
@@ -424,6 +448,7 @@ export interface WorldState {
   messages: ChatMessage[];
   decisions: DecisionRecord[];
   wars: WarState[];
+  transportLinks: TransportLink[];
   market: GlobalMarketState;
   internationalInstitutions: InternationalInstitutionState[];
   providerStatus: ProviderStatus[];
@@ -456,6 +481,10 @@ export type AgentActionType =
   | 'claim_land'
   | 'contest_land'
   | 'patrol_frontier'
+  | 'build_road'
+  | 'build_rail'
+  | 'build_port'
+  | 'build_airport'
   | 'catastrophic_review'
   | 'authorize_catastrophic'
   | 'cancel_catastrophic';
@@ -475,6 +504,9 @@ export interface AgentActionPayload {
   amount?: number;
   rate?: number;
   settlement?: 'fiat' | 'gold' | 'mixed';
+  fromSettlementId?: string;
+  toSettlementId?: string;
+  transportKind?: TransportKind;
   terms?: string;
 }
 
