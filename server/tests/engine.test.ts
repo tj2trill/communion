@@ -18,6 +18,8 @@ import {
 } from '../world';
 import { findRoute } from '../routing';
 import { landPolygons, segmentOnLand } from '../terrain';
+import { canAfford, consume, linkBuildCost, shortfall } from '../build-costs';
+import { applySociety, ensureSociety, setFunding, setRegulation } from '../society';
 
 process.env.AUTO_START = 'false';
 process.env.COMMUNION_MODE = 'mock';
@@ -300,4 +302,102 @@ test('deterministic stepping advances delegates and maintains invariants', () =>
   assert.equal(world.delegates.every((delegate) => delegate.turnCount > 0), true);
   assert.ok(world.messages.length > 4);
   assert.ok(world.decisions.length > 2);
+});
+
+test('slice 2: builds require money and materials (gating)', () => {
+  const world = createInitialWorld();
+  const nation = world.nations[0];
+  const cost = linkBuildCost('road', 10);
+  assert.ok(cost.money > 0 && cost.stone > 0);
+  assert.equal(canAfford(nation, cost), true);
+
+  nation.resources.stone = 0;
+  assert.equal(canAfford(nation, cost), false);
+  assert.equal(shortfall(nation, cost), 'stone');
+
+  // Consuming a cost strictly reduces treasury and stockpiles, never below zero.
+  nation.resources.stone = cost.stone + 5;
+  const cashBefore = nation.economy.fiat.treasuryCash;
+  consume(nation, cost);
+  assert.ok(nation.economy.fiat.treasuryCash < cashBefore);
+  assert.equal(nation.resources.stone, 5);
+  assert.ok(nation.resources.trees >= 0 && nation.resources.gold >= 0);
+});
+
+test('slice 2: organic construction halts when bankrupt of materials and cash', () => {
+  const world = createInitialWorld();
+  const nation = world.nations[0];
+  nation.resources = { trees: 0, stone: 0, sand: 0, water: 0, gold: 0 };
+  nation.economy.fiat.treasuryCash = 0;
+  const builtBefore = nation.settlements.map((settlement) => settlement.builtArea);
+  pulseWorld(world, 1);
+  nation.settlements.forEach((settlement, index) => {
+    assert.equal(settlement.constructionHalted, true);
+    assert.ok(settlement.builtArea <= builtBefore[index] + 0.001);
+  });
+});
+
+test('slice 4: society initializes and stays clamped 0..100', () => {
+  const world = createInitialWorld();
+  const nation = world.nations[0];
+  ensureSociety(nation);
+  assert.ok(nation.society);
+  for (let i = 0; i < 60; i += 1) applySociety(nation, 1);
+  const society = nation.society!;
+  for (const value of Object.values(society)) {
+    assert.ok(value >= 0 && value <= 100, `metric out of range: ${value}`);
+  }
+});
+
+test('slice 4: heavy policing plus weapon bans lower crime versus minimal', () => {
+  const heavyWorld = createInitialWorld();
+  const heavy = heavyWorld.nations[0];
+  heavy.policy.policingLevel = 'heavy';
+  heavy.policy.gunRegulation = 'banned';
+  heavy.policy.weaponRegulation = 'banned';
+  for (let i = 0; i < 60; i += 1) applySociety(heavy, 1);
+
+  const loose = createInitialWorld().nations[0];
+  loose.policy.policingLevel = 'minimal';
+  loose.policy.gunRegulation = 'unrestricted';
+  loose.policy.weaponRegulation = 'unrestricted';
+  for (let i = 0; i < 60; i += 1) applySociety(loose, 1);
+
+  assert.ok(heavy.society!.crimeRate < loose.society!.crimeRate);
+  assert.ok(heavy.society!.policing > loose.society!.policing);
+});
+
+test('slice 4: drug legalization raises prevalence versus prohibition', () => {
+  const legal = createInitialWorld().nations[0];
+  legal.policy.drugPolicy = 'legal-regulated';
+  for (let i = 0; i < 60; i += 1) applySociety(legal, 1);
+
+  const banned = createInitialWorld().nations[0];
+  banned.policy.drugPolicy = 'prohibition';
+  for (let i = 0; i < 60; i += 1) applySociety(banned, 1);
+
+  assert.ok(legal.society!.drugPrevalence > banned.society!.drugPrevalence);
+});
+
+test('slice 4: regulation and funding setters validate and clamp', () => {
+  const nation = createInitialWorld().nations[0];
+  assert.equal(setRegulation(nation, 'gunRegulation', 'banned'), 'gunRegulation -> banned');
+  assert.equal(nation.policy.gunRegulation, 'banned');
+  assert.equal(setRegulation(nation, 'gunRegulation', 'nonsense'), null);
+  assert.equal(setRegulation(nation, 'unknownArea', 'x'), null);
+
+  assert.equal(setFunding(nation, 'healthFunding', 250), 'healthFunding -> 100');
+  assert.equal(nation.policy.healthFunding, 100);
+  assert.equal(setFunding(nation, 'healthFunding', -40), 'healthFunding -> 0');
+  assert.equal(setFunding(nation, 'notFunding', 50), null);
+});
+
+test('slice 4: society evolution is deterministic', () => {
+  const a = createInitialWorld().nations[0];
+  const b = createInitialWorld().nations[0];
+  for (let i = 0; i < 40; i += 1) {
+    applySociety(a, 1);
+    applySociety(b, 1);
+  }
+  assert.deepEqual(a.society, b.society);
 });

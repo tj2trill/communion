@@ -34,6 +34,8 @@ import type {
 } from '../src/lib/types';
 import { findRoute, pointAlongPolyline, polylineLength } from './routing';
 import { isCoastal as terrainIsCoastal, landPolygons, segmentOnLand } from './terrain';
+import { airportBuildCost, buildingTickCost, canAfford, consume, describeCost, linkBuildCost, portBuildCost, shortfall } from './build-costs';
+import { applySociety, ensureSociety, setFunding, setRegulation } from './society';
 import {
   callModelProvider,
   envModel,
@@ -364,6 +366,7 @@ function ensureNationCivilization(nation: NationState, index: number) {
     settlement.hasAirport ??= settlement.kind === 'capital' || settlement.kind === 'metro';
     settlement.hasRailHub ??= settlement.kind === 'capital' || settlement.kind === 'metro' || settlement.kind === 'industrial';
   }
+  ensureSociety(nation);
   nation.civilianCohorts = nation.civilianCohorts?.length ? nation.civilianCohorts : createCivilianCohorts(nation.id, nation.settlements, nation.social.population, index);
   for (const cohort of nation.civilianCohorts) {
     cohort.nationId = nation.id;
@@ -550,16 +553,30 @@ function buildTransport(world: WorldState, nation: NationState, delegate: Delega
       addDecision(world, delegate.id, 'build_port', 'Port survey deferred', `${nation.name} surveyed ${from.name}, but the settlement is not coastal.`, ['No external-world construction occurs.', 'Transport planning remains inside the simulation.'], false, 'routine');
       return;
     }
+    const portCost = portBuildCost(from.builtArea);
+    const portShort = shortfall(nation, portCost);
+    if (portShort) {
+      addDecision(world, delegate.id, 'build_port', 'Port construction stalled', `${nation.name} could not fund a port at ${from.name}: short on ${portShort}.`, [`A port needs ${describeCost(portCost)}.`, 'Construction halts until materials and money are available.'], false, 'important');
+      return;
+    }
+    consume(nation, portCost);
     from.hasPort = true;
     from.infrastructure = round(clamp(from.infrastructure + 1.2));
-    addDecision(world, delegate.id, 'build_port', 'Port authority chartered', `${nation.name} opened a simulated port authority at ${from.name}.`, ['Sea-lane construction is now possible for this settlement.'], true, 'routine');
+    addDecision(world, delegate.id, 'build_port', 'Port authority chartered', `${nation.name} opened a simulated port authority at ${from.name} for ${describeCost(portCost)}.`, ['Sea-lane construction is now possible for this settlement.'], true, 'routine');
     return;
   }
 
   if (action.type === 'build_airport') {
+    const airCost = airportBuildCost(from.builtArea);
+    const airShort = shortfall(nation, airCost);
+    if (airShort) {
+      addDecision(world, delegate.id, 'build_airport', 'Airport construction stalled', `${nation.name} could not fund an airport at ${from.name}: short on ${airShort}.`, [`An airport needs ${describeCost(airCost)}.`, 'Construction halts until materials and money are available.'], false, 'important');
+      return;
+    }
+    consume(nation, airCost);
     from.hasAirport = true;
     from.infrastructure = round(clamp(from.infrastructure + 1.1));
-    addDecision(world, delegate.id, 'build_airport', 'Airport district approved', `${nation.name} approved a simulated airport district at ${from.name}.`, ['Air-link construction is now possible for this settlement.'], true, 'routine');
+    addDecision(world, delegate.id, 'build_airport', 'Airport district approved', `${nation.name} approved a simulated airport district at ${from.name} for ${describeCost(airCost)}.`, ['Air-link construction is now possible for this settlement.'], true, 'routine');
     return;
   }
 
@@ -571,17 +588,31 @@ function buildTransport(world: WorldState, nation: NationState, delegate: Delega
     return;
   }
 
+  const length = Math.hypot(to.position.x - from.position.x, to.position.z - from.position.z);
+  const linkCost = linkBuildCost(kind, length);
   const linkId = transportId(kind, from.id, to.id);
   const existing = world.transportLinks.find((link) => link.id === linkId);
   if (existing) {
+    const rehabCost = { money: Math.round(linkCost.money * 0.4), trees: Math.round(linkCost.trees * 0.4), stone: Math.round(linkCost.stone * 0.4), sand: Math.round(linkCost.sand * 0.4), gold: Math.round(linkCost.gold * 0.4) };
+    const rehabShort = shortfall(nation, rehabCost);
+    if (rehabShort) {
+      addDecision(world, delegate.id, action.type, `${kind} rehabilitation stalled`, `${nation.name} could not repair the ${kind} corridor between ${from.name} and ${to.name}: short on ${rehabShort}.`, [`Repair needs ${describeCost(rehabCost)}.`], false, 'routine');
+      return;
+    }
+    consume(nation, rehabCost);
     existing.built = true;
     existing.progress = 100;
     existing.condition = round(clamp(existing.condition + 5));
-    addDecision(world, delegate.id, action.type, `${kind} link rehabilitated`, `${nation.name} restored the ${kind} corridor between ${from.name} and ${to.name}.`, ['Route capacity and condition improved.'], true, 'routine');
+    addDecision(world, delegate.id, action.type, `${kind} link rehabilitated`, `${nation.name} restored the ${kind} corridor between ${from.name} and ${to.name} for ${describeCost(rehabCost)}.`, ['Route capacity and condition improved.'], true, 'routine');
     return;
   }
 
-  const length = Math.hypot(to.position.x - from.position.x, to.position.z - from.position.z);
+  const linkShort = shortfall(nation, linkCost);
+  if (linkShort) {
+    addDecision(world, delegate.id, action.type, `${kind} construction stalled`, `${nation.name} could not fund a ${kind} link from ${from.name} to ${to.name}: short on ${linkShort}.`, [`This ${kind} link needs ${describeCost(linkCost)}.`, 'Cohorts on that path stay route-blocked until it is funded.'], false, 'important');
+    return;
+  }
+  consume(nation, linkCost);
   world.transportLinks.push({
     id: linkId,
     scope: 'nation',
@@ -595,7 +626,7 @@ function buildTransport(world: WorldState, nation: NationState, delegate: Delega
     capacity: Math.round((kind === 'rail' ? 14 : 8) + nation.social.infrastructure / (kind === 'rail' ? 8 : 10)),
     condition: clamp(70 + nation.social.infrastructure / 5 - length * 0.18)
   });
-  addDecision(world, delegate.id, action.type, `${kind} link opened`, `${nation.name} opened a simulated ${kind} link from ${from.name} to ${to.name}.`, ['Civilian cohorts can route through the new transport link.'], true, 'routine');
+  addDecision(world, delegate.id, action.type, `${kind} link opened`, `${nation.name} opened a simulated ${kind} link from ${from.name} to ${to.name} for ${describeCost(linkCost)}.`, ['Civilian cohorts can route through the new transport link.'], true, 'routine');
 }
 
 function createNation(index: number): NationState {
@@ -1385,6 +1416,16 @@ function applyAction(world: WorldState, delegate: DelegateState, action: AgentAc
     }
   } else if (action.type === 'build_road' || action.type === 'build_rail' || action.type === 'build_port' || action.type === 'build_airport') {
     buildTransport(world, nation, delegate, action);
+  } else if (action.type === 'set_regulation' && action.policyArea && typeof action.value === 'string') {
+    const result = setRegulation(nation, action.policyArea, action.value);
+    if (result) {
+      addDecision(world, delegate.id, 'set_regulation', `${nation.name} set ${action.policyArea}`, `${nation.name} changed ${result}.`, ['Regulation will shift crime, drugs, health, or unrest over coming events.'], true, 'important');
+    }
+  } else if (action.type === 'set_funding' && action.policyArea && typeof action.value === 'number') {
+    const result = setFunding(nation, action.policyArea, action.value);
+    if (result) {
+      addDecision(world, delegate.id, 'set_funding', `${nation.name} adjusted ${action.policyArea}`, `${nation.name} set ${result}.`, ['Funding draws treasury cash and moves the linked society metric.'], true, 'routine');
+    }
   }
 }
 
@@ -1448,7 +1489,15 @@ function evolveNationCivilization(nation: NationState, intensity = 1) {
       nation.social.infrastructure * 0.0015 -
       nation.economy.unemployment * 0.015 -
       nation.security.warWeariness * 0.012;
-    const constructionGain = (0.018 + economicPressure) * resourceAdequacy * intensity;
+    // Slice 2: organic construction is materials/money gated. With no stone,
+    // timber, or treasury cash on hand, building halts outright (no progress)
+    // rather than silently creeping forward.
+    const tickCost = buildingTickCost(settlement.builtArea);
+    const affordable = canAfford(nation, tickCost);
+    settlement.constructionHalted = !affordable;
+    settlement.constructionBlockReason = affordable ? undefined : (shortfall(nation, tickCost) ?? undefined);
+    const constructionGain = affordable ? (0.018 + economicPressure) * resourceAdequacy * intensity : 0;
+    if (affordable && constructionGain > 0) consume(nation, tickCost);
     settlement.construction = round(clamp(settlement.construction + constructionGain * 10 - (resourceAdequacy < 0.7 ? 0.05 : 0)));
     settlement.builtArea = round(clamp(settlement.builtArea + constructionGain * 0.5));
     settlement.infrastructure = round(clamp(settlement.infrastructure + (nation.social.infrastructure - settlement.infrastructure) * 0.006 * intensity + constructionGain * 0.18));
@@ -1480,6 +1529,7 @@ function evolveNationCivilization(nation: NationState, intensity = 1) {
     water: round(Math.max(0, nation.resources.water + nation.economy.energySecurity * 0.0008 * intensity - totalDemand.water * 0.01 * intensity)),
     gold: round(Math.max(0, nation.resources.gold - totalDemand.gold * 0.006 * intensity))
   };
+  applySociety(nation, intensity);
   rebalanceSettlementPopulation(nation);
 }
 
@@ -1728,6 +1778,8 @@ function speechFor(world: WorldState, delegate: DelegateState, action: AgentActi
   if (action.type === 'patrol_frontier') return `${nation.name} is moving through unclaimed land to understand terrain, resources, and settlement risk.`;
   if (action.type === 'build_road' || action.type === 'build_rail') return `${nation.name} is planning transport links so civilians follow terrain-aware routes instead of crossing open water.`;
   if (action.type === 'build_port' || action.type === 'build_airport') return `${nation.name} is expanding transport access while keeping every action inside the fictional state machine.`;
+  if (action.type === 'set_regulation') return `${nation.name} is adjusting public regulations and watching crime, health, unrest, and legitimacy effects.`;
+  if (action.type === 'set_funding') return `${nation.name} is reallocating public funding with visible treasury and society consequences.`;
   return `${nation.name} reviews money, law, confidence, diplomacy, and public welfare before acting.`;
 }
 

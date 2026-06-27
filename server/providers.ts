@@ -53,6 +53,8 @@ const ACTION_TYPES = [
   'build_rail',
   'build_port',
   'build_airport',
+  'set_regulation',
+  'set_funding',
   'catastrophic_review'
 ] as const satisfies readonly AgentActionType[];
 
@@ -88,6 +90,12 @@ const actionAliases: Record<string, AgentActionType> = {
   buildport: 'build_port',
   airport: 'build_airport',
   buildairport: 'build_airport',
+  regulation: 'set_regulation',
+  setregulation: 'set_regulation',
+  regulate: 'set_regulation',
+  funding: 'set_funding',
+  setfunding: 'set_funding',
+  fund: 'set_funding',
   review_catastrophic: 'catastrophic_review',
   deterrence_review: 'catastrophic_review'
 };
@@ -98,6 +106,22 @@ const actionTypeSchema = z.preprocess((value) => {
   const squashed = compact.replaceAll('_', '');
   return actionAliases[compact] ?? actionAliases[squashed] ?? compact;
 }, z.enum(ACTION_TYPES));
+
+const REGULATION_DEFAULTS: Record<string, string> = {
+  gunRegulation: 'licensed',
+  weaponRegulation: 'restricted',
+  drugPolicy: 'decriminalized',
+  policingLevel: 'standard'
+};
+
+const REGULATION_VALUES: Record<string, string[]> = {
+  gunRegulation: ['unrestricted', 'licensed', 'restricted', 'banned'],
+  weaponRegulation: ['unrestricted', 'licensed', 'restricted', 'banned'],
+  drugPolicy: ['prohibition', 'decriminalized', 'legal-regulated'],
+  policingLevel: ['minimal', 'standard', 'heavy']
+};
+
+const FUNDING_KEYS = new Set(['educationFunding', 'healthFunding', 'scienceFunding', 'welfareFunding']);
 
 const boundedString = (limit: number) => z.string().trim().min(1).transform((value) => value.slice(0, limit));
 const finiteNumber = z.preprocess((value) => {
@@ -115,7 +139,8 @@ function coerceActionCandidate(value: unknown): unknown {
     targetDelegateId: raw.targetDelegateId ?? raw.target_delegate_id ?? raw.targetDelegate,
     proposalId: raw.proposalId ?? raw.proposal_id,
     territoryId: raw.territoryId ?? raw.territory_id ?? raw.frontierId ?? raw.frontier_id,
-    policyArea: raw.policyArea ?? raw.policy_area,
+    policyArea: raw.policyArea ?? raw.policy_area ?? raw.area ?? raw.regulation ?? raw.funding,
+    value: raw.value ?? raw.policyValue ?? raw.policy_value,
     amount: raw.amount ?? raw.valueAmount,
     settlement: raw.settlement ?? raw.settlementType ?? raw.settlement_type,
     fromSettlementId: raw.fromSettlementId ?? raw.from_settlement_id,
@@ -266,6 +291,17 @@ function buildPrompt(world: WorldState, delegate: DelegateState) {
       conventionalCapacity: nation.security.conventionalCapacity,
       warWeariness: nation.security.warWeariness
     },
+    society: nation.society,
+    regulations: {
+      gunRegulation: nation.policy.gunRegulation,
+      weaponRegulation: nation.policy.weaponRegulation,
+      drugPolicy: nation.policy.drugPolicy,
+      policingLevel: nation.policy.policingLevel,
+      educationFunding: nation.policy.educationFunding,
+      healthFunding: nation.policy.healthFunding,
+      scienceFunding: nation.policy.scienceFunding,
+      welfareFunding: nation.policy.welfareFunding
+    },
     nations: world.nations.map((item) => ({
       id: item.id,
       name: item.name,
@@ -333,8 +369,8 @@ function buildPrompt(world: WorldState, delegate: DelegateState) {
       'Avoid tactical real-world violence details. Conflict actions are abstract and aggregate only.'
     ].join(' '),
     user: [
-      'Allowed action.type values: observe, move, propose_policy, vote, set_policy_rate, issue_money, fiscal_policy, buy_gold, sell_gold, trade_offer, currency_swap, humanitarian_aid, claim_land, contest_land, patrol_frontier, build_road, build_rail, build_port, build_airport, catastrophic_review.',
-      'Use targetNationId for trade_offer, currency_swap, humanitarian_aid. Use territoryId for claim_land, contest_land, patrol_frontier. Use proposalId and vote for vote. Use fromSettlementId and toSettlementId for build_road or build_rail.',
+      'Allowed action.type values: observe, move, propose_policy, vote, set_policy_rate, issue_money, fiscal_policy, buy_gold, sell_gold, trade_offer, currency_swap, humanitarian_aid, claim_land, contest_land, patrol_frontier, build_road, build_rail, build_port, build_airport, set_regulation, set_funding, catastrophic_review.',
+      'Use targetNationId for trade_offer, currency_swap, humanitarian_aid. Use territoryId for claim_land, contest_land, patrol_frontier. Use proposalId and vote for vote. Use fromSettlementId and toSettlementId for build_road or build_rail. For set_regulation use policyArea one of gunRegulation/weaponRegulation/drugPolicy/policingLevel and value the option string. For set_funding use policyArea one of educationFunding/healthFunding/scienceFunding/welfareFunding and value a 0-100 number.',
       'Respond exactly as JSON shaped like: {"thought":"public summary","speech":"what you say publicly","channel":"public","action":{"type":"buy_gold","amount":12}}.',
       `World snapshot: ${JSON.stringify(compact)}`
     ].join('\n')
@@ -546,6 +582,17 @@ function normalizeAction(action: AgentActionPayload, world: WorldState, delegate
     normalized.policyArea ??= 'governance';
     normalized.scope ??= 'world';
     normalized.value ??= true;
+  }
+  if (normalized.type === 'set_regulation') {
+    const area = Object.prototype.hasOwnProperty.call(REGULATION_VALUES, normalized.policyArea ?? '') ? normalized.policyArea! : 'drugPolicy';
+    const rawValue = typeof normalized.value === 'string' ? normalized.value : undefined;
+    normalized.policyArea = area;
+    normalized.value = rawValue && REGULATION_VALUES[area].includes(rawValue) ? rawValue : REGULATION_DEFAULTS[area];
+  }
+  if (normalized.type === 'set_funding') {
+    normalized.policyArea = normalized.policyArea && FUNDING_KEYS.has(normalized.policyArea) ? normalized.policyArea : 'healthFunding';
+    const rawValue = typeof normalized.value === 'number' ? normalized.value : typeof normalized.value === 'string' && normalized.value.trim() ? Number(normalized.value) : normalized.amount;
+    normalized.value = Number.isFinite(rawValue) ? Math.max(0, Math.min(100, Number(rawValue))) : 60;
   }
   if (normalized.amount !== undefined) normalized.amount = Math.max(0, Math.min(200, normalized.amount));
   if (normalized.rate !== undefined) normalized.rate = Math.max(-2, Math.min(4, normalized.rate));

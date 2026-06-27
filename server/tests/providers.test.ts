@@ -60,3 +60,24 @@ test('provider parser bounds long text before validation', () => {
   assert.equal(turn.action.title?.length, 120);
   assert.equal(turn.action.description?.length, 420);
 });
+
+test('provider parser bounds regulation and funding actions', () => {
+  const { world, delegate } = fixture();
+  const regulation = normalizeProviderTurn(
+    JSON.stringify({ thought: 'Reduce black-market harm.', action: { type: 'regulate', area: 'drugPolicy', value: 'legal-regulated' } }),
+    world,
+    delegate
+  );
+  assert.equal(regulation.action.type, 'set_regulation');
+  assert.equal(regulation.action.policyArea, 'drugPolicy');
+  assert.equal(regulation.action.value, 'legal-regulated');
+
+  const funding = normalizeProviderTurn(
+    JSON.stringify({ thought: 'Fund public health.', action: { type: 'fund', policy_area: 'healthFunding', value: '145' } }),
+    world,
+    delegate
+  );
+  assert.equal(funding.action.type, 'set_funding');
+  assert.equal(funding.action.policyArea, 'healthFunding');
+  assert.equal(funding.action.value, 100);
+});

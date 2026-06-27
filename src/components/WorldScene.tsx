@@ -633,6 +633,21 @@ function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectN
         );
       })}
 
+      {world.delegates.map((delegate) => {
+        const nation = world.nations.find((item) => item.id === delegate.nationId);
+        const thought = (delegate.currentThought ?? '').trim();
+        if (!nation || !thought) return null;
+        const anchor = simulationPointToVector(delegate.position, 0.98);
+        return (
+          <Html key={`thought-${delegate.id}`} center position={anchor.toArray()} distanceFactor={9} className="map-label-wrapper" zIndexRange={[20, 0]}>
+            <div className="globe-thought" style={{ borderColor: nation.color }}>
+              <Flag flag={nation.flag} className="globe-thought-flag" />
+              <span>{thought.length > 72 ? `${thought.slice(0, 72)}...` : thought}</span>
+            </div>
+          </Html>
+        );
+      })}
+
       <OrbitControls
         makeDefault
         enableDamping

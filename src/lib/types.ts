@@ -149,6 +149,36 @@ export interface SecurityState {
   casualties: number;
 }
 
+export type IdeologyVariant =
+  | 'capitalist'
+  | 'socialist'
+  | 'communist'
+  | 'social-democratic'
+  | 'libertarian'
+  | 'nationalist'
+  | 'technocratic';
+
+export type GunRegulation = 'unrestricted' | 'licensed' | 'restricted' | 'banned';
+export type DrugPolicy = 'prohibition' | 'decriminalized' | 'legal-regulated';
+export type PolicingLevel = 'minimal' | 'standard' | 'heavy';
+
+// Slice 4: mechanical society metrics, all 0..100, driven each tick by
+// regulations, funding levers, and ideology. Distinct from the headline
+// SocialState so existing fields are not overloaded.
+export interface SocietyState {
+  crimeRate: number;
+  incarceration: number;
+  policing: number;
+  drugPrevalence: number;
+  addiction: number;
+  publicHealth: number;
+  educationAttainment: number;
+  scienceTech: number;
+  employment: number;
+  socialCohesion: number;
+  civilUnrest: number;
+}
+
 export interface TerritoryState {
   polygon: Vec2[];
   capital: Vec2;
@@ -189,6 +219,8 @@ export interface SettlementState {
   hasPort: boolean;
   hasAirport: boolean;
   hasRailHub: boolean;
+  constructionHalted?: boolean;
+  constructionBlockReason?: string;
 }
 
 export type CivilianPurpose = 'commute' | 'trade' | 'migration' | 'aid' | 'displacement';
@@ -266,6 +298,8 @@ export interface NationState {
   economy: EconomyState;
   social: SocialState;
   security: SecurityState;
+  society?: SocietyState;
+  ideologyVariant?: IdeologyVariant;
   policy: Record<string, string | number | boolean>;
 }
 
@@ -485,6 +519,8 @@ export type AgentActionType =
   | 'build_rail'
   | 'build_port'
   | 'build_airport'
+  | 'set_regulation'
+  | 'set_funding'
   | 'catastrophic_review'
   | 'authorize_catastrophic'
   | 'cancel_catastrophic';

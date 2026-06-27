@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { ActivityPanel, type ActivityTab, LeftPanel, type LeftTab, WorldSummary } from './components/DashboardPanels';
+import { CityScene } from './components/CityScene';
 import { WorldScene } from './components/WorldScene';
 import { api } from './lib/api';
 import type { AnatomyMode, OverlayMode, WorldState } from './lib/types';
@@ -55,6 +56,7 @@ export default function App() {
   const [anatomyMode, setAnatomyMode] = useState<AnatomyMode>('exterior');
   const [overlay, setOverlay] = useState<OverlayMode>('political');
   const [selectedNationId, setSelectedNationId] = useState('nation-axiom');
+  const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
   const [scenarioOpen, setScenarioOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
 
@@ -83,13 +85,25 @@ export default function App() {
     [selectedNationId, world]
   );
 
+  const selectedCity = useMemo(() => {
+    if (!selectedCityId || !world) return null;
+    for (const nation of world.nations) {
+      const settlement = nation.settlements?.find((item) => item.id === selectedCityId);
+      if (settlement) return { settlement, nation };
+    }
+    return null;
+  }, [selectedCityId, world]);
+
   async function control(action: 'run' | 'pause' | 'step' | 'reset' | 'speed', speed?: number) {
     if (busy) return;
     setBusy(true);
     try {
       const response = await api.control(action, speed);
       setWorld(response.state);
-      if (action === 'reset') setSelectedNationId('nation-axiom');
+      if (action === 'reset') {
+        setSelectedNationId('nation-axiom');
+        setSelectedCityId(null);
+      }
       setError(undefined);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
@@ -220,6 +234,17 @@ export default function App() {
             <div><strong>{selectedNation?.name}</strong><small>{world.scenario}</small></div>
           </div>
 
+          {selectedNation?.settlements?.length ? (
+            <div className="city-strip glass-toolbar">
+              <span><MapIcon size={15} /> CITIES</span>
+              {selectedNation.settlements.slice(0, 6).map((settlement) => (
+                <button key={settlement.id} onClick={() => setSelectedCityId(settlement.id)} title={`Dive into ${settlement.name}`}>
+                  {settlement.name}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
           <div className="anatomy-toolbar glass-toolbar">
             <span><CircleUserRound size={15} /> AVATAR</span>
             <button className={anatomyMode === 'exterior' ? 'active' : ''} onClick={() => setAnatomyMode('exterior')} title="Exterior"><Eye size={15} /> Exterior</button>
@@ -246,6 +271,10 @@ export default function App() {
 
         <ActivityPanel world={world} tab={activityTab} onTab={setActivityTab} />
       </main>
+
+      {selectedCity && (
+        <CityScene settlement={selectedCity.settlement} nation={selectedCity.nation} onClose={() => setSelectedCityId(null)} />
+      )}
 
       <footer className="statusbar">
         <div><span className="status-indicator" />Contained simulation: no external tools or authority</div>
