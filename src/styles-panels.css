@@ -46,6 +46,55 @@
 .positive { color: var(--green) !important; }
 .negative { color: var(--red) !important; }
 
+.flag {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 21px;
+  overflow: hidden;
+  border: 1px solid rgba(230, 246, 248, 0.32);
+  border-radius: 3px;
+  background: var(--flag-primary);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18), 0 5px 12px rgba(0, 0, 0, 0.25);
+}
+.flag::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--flag-secondary);
+}
+.flag-cross::before {
+  clip-path: polygon(0 38%, 38% 38%, 38% 0, 61% 0, 61% 38%, 100% 38%, 100% 62%, 61% 62%, 61% 100%, 38% 100%, 38% 62%, 0 62%);
+}
+.flag-diagonal::before {
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+.flag-sun::before {
+  inset: 4px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--flag-secondary) 28%, transparent);
+}
+.flag-chevron::before {
+  clip-path: polygon(0 0, 58% 50%, 0 100%, 0 72%, 30% 50%, 0 28%);
+}
+.flag.flag > span {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: rgba(3, 7, 9, 0.36);
+  color: #f3fbfc;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+
 .detail-section { margin-top: 10px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: rgba(11, 25, 31, 0.65); }
 .detail-section h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 9px; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: #9db1b5; }
 .compact-row { padding: 7px 0 !important; }
@@ -127,6 +176,146 @@
 .war-card > header strong { display: block; font-size: 11px; color: #e5cbcb; }
 .war-card > header small { display: block; margin-top: 3px; font-size: 8px; color: #987c7e; }
 .war-card > header > span { padding: 3px 5px; border-radius: 4px; background: rgba(236, 105, 99, 0.1); color: #e68782; font-size: 7px; text-transform: uppercase; }
+.frontier-section h3 svg { color: #77d4b4; }
+.frontier-summary { margin: -2px 0 9px; color: #789099; font-size: 9px; line-height: 1.45; }
+.frontier-grid { display: grid; gap: 8px; }
+.frontier-card {
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--frontier) 24%, rgba(151, 190, 199, 0.12));
+  border-left: 3px solid var(--frontier);
+  border-radius: 8px;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--frontier) 9%, rgba(13, 28, 34, 0.82)), rgba(8, 18, 23, 0.84));
+}
+.frontier-card > header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+}
+.frontier-card > header strong {
+  display: block;
+  color: #d9eaec;
+  font-size: 11px;
+  line-height: 1.25;
+}
+.frontier-card > header small {
+  display: block;
+  margin-top: 3px;
+  color: #789098;
+  font-size: 8px;
+  line-height: 1.35;
+}
+.frontier-card > header > span {
+  padding: 3px 5px;
+  border-radius: 4px;
+  background: rgba(102, 211, 208, 0.08);
+  color: #a7d6d2;
+  font-size: 7px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.frontier-card.status-contested > header > span { background: rgba(236, 105, 99, 0.12); color: #ef8d88; }
+.frontier-card.status-claimed > header > span { background: rgba(240, 166, 75, 0.12); color: #f0b05d; }
+.frontier-card.status-controlled > header > span { background: rgba(89, 213, 157, 0.12); color: #8ce3bb; }
+.frontier-parties {
+  display: grid;
+  gap: 5px;
+  margin-top: 9px;
+}
+.frontier-party {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 6px;
+  border: 1px solid rgba(151, 190, 199, 0.08);
+  border-radius: 6px;
+  background: rgba(5, 13, 18, 0.34);
+}
+.frontier-party svg { color: #7aa1a7; }
+.frontier-flag { width: 30px; height: 19px; }
+.frontier-party span {
+  display: block;
+  color: #60777e;
+  font-size: 7px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.frontier-party strong {
+  display: block;
+  margin-top: 2px;
+  color: #b8cccf;
+  font-size: 9px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.frontier-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 9px;
+}
+.frontier-resource {
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid rgba(151, 190, 199, 0.08);
+  border-radius: 6px;
+  background: rgba(12, 27, 33, 0.54);
+}
+.frontier-resource > div:first-child {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+.frontier-resource svg { color: #77d4b4; }
+.frontier-resource span {
+  color: #8fa5aa;
+  font-size: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.frontier-resource b {
+  color: #d2e2e4;
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.frontier-resource .bar-wrap b { display: none; }
+.frontier-recent {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 7px;
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(151, 190, 199, 0.08);
+}
+.frontier-recent svg { color: #d7b45e; }
+.frontier-recent p { min-width: 0; margin: 0; }
+.frontier-recent strong {
+  display: block;
+  color: #d8e5e7;
+  font-size: 9px;
+  line-height: 1.25;
+}
+.frontier-recent span {
+  display: block;
+  margin-top: 3px;
+  color: #789098;
+  font-size: 8px;
+  line-height: 1.35;
+}
+.frontier-recent b {
+  color: #73898e;
+  font-size: 7px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
 .strategic-review { margin-top: 9px; padding: 8px; border: 1px solid rgba(236, 105, 99, 0.34); border-radius: 6px; background: rgba(72, 17, 20, 0.28); }
 .strategic-review h4 { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; color: #f09a94; font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; }
 .review-status { display: flex; justify-content: space-between; margin-bottom: 6px; }

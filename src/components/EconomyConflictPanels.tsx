@@ -1,5 +1,6 @@
-import { Banknote, Coins, Scale, ShieldAlert } from 'lucide-react';
-import type { NationState, WorldState } from '../lib/types';
+import { Banknote, Coins, Droplets, FlagTriangleRight, Gem, Mountain, Pickaxe, Scale, ShieldAlert, Trees, WavesHorizontal } from 'lucide-react';
+import type { DecisionRecord, NationState, NeutralTerritoryState, WorldState } from '../lib/types';
+import { Flag } from './Flag';
 import { Bar, compact, decimal, Metric } from './PanelPrimitives';
 
 export function EconomyPanel({ world, nation }: { world: WorldState; nation: NationState }) {
@@ -63,6 +64,114 @@ export function EconomyPanel({ world, nation }: { world: WorldState; nation: Nat
   );
 }
 
+const frontierActionTypes = new Set(['claim_land', 'contest_land', 'patrol_frontier']);
+
+const frontierResourceIcons = {
+  trees: Trees,
+  stone: Mountain,
+  sand: WavesHorizontal,
+  water: Droplets,
+  gold: Gem
+};
+
+const frontierResourceLabels = {
+  trees: 'Trees',
+  stone: 'Stone',
+  sand: 'Sand',
+  water: 'Water',
+  gold: 'Gold'
+};
+
+function frontierStatus(territory: NeutralTerritoryState) {
+  if (territory.controllingNationId && territory.contestLevel >= 45) return 'contested';
+  if (territory.controllingNationId) return 'controlled';
+  if (territory.claimantNationIds.length > 0) return 'claimed';
+  return 'free';
+}
+
+function recentFrontierDecision(territory: NeutralTerritoryState, decisions: DecisionRecord[]) {
+  const name = territory.name.toLowerCase();
+  return [...decisions].reverse().find((decision) => (
+    frontierActionTypes.has(decision.type)
+    && `${decision.title} ${decision.summary}`.toLowerCase().includes(name)
+  ));
+}
+
+function FrontierCard({ territory, world }: { territory: NeutralTerritoryState; world: WorldState }) {
+  const controller = territory.controllingNationId ? world.nations.find((nation) => nation.id === territory.controllingNationId) : undefined;
+  const claimants = territory.claimantNationIds
+    .map((id) => world.nations.find((nation) => nation.id === id))
+    .filter((nation): nation is NationState => Boolean(nation));
+  const status = frontierStatus(territory);
+  const recent = recentFrontierDecision(territory, world.decisions);
+  const signalColor = controller?.color ?? claimants[0]?.color ?? '#76a9b7';
+  const resourceTotal = Object.values(territory.resources).reduce((sum, value) => sum + value, 0);
+
+  return (
+    <article className={`frontier-card status-${status}`} style={{ '--frontier': signalColor } as React.CSSProperties}>
+      <header>
+        <div>
+          <strong>{territory.name}</strong>
+          <small>{territory.area.toFixed(0)} km simulation cell · elevation {territory.elevation.toFixed(2)}</small>
+        </div>
+        <span>{status}</span>
+      </header>
+
+      <div className="frontier-parties">
+        <div className="frontier-party controller">
+          {controller ? <Flag flag={controller.flag} className="frontier-flag" /> : <FlagTriangleRight size={17} />}
+          <div><span>Controller</span><strong>{controller?.name ?? 'Open free land'}</strong></div>
+        </div>
+        <div className="frontier-party">
+          <FlagTriangleRight size={17} />
+          <div><span>Claimants</span><strong>{claimants.length ? claimants.map((nation) => nation.name).join(', ') : 'None yet'}</strong></div>
+        </div>
+      </div>
+
+      <div className="frontier-resource-grid">
+        {Object.entries(territory.resources).map(([key, value]) => {
+          const Icon = frontierResourceIcons[key as keyof typeof frontierResourceIcons];
+          return (
+            <div className="frontier-resource" key={key}>
+              <div><Icon size={13} /><span>{frontierResourceLabels[key as keyof typeof frontierResourceLabels]}</span><b>{value.toFixed(0)}</b></div>
+              <Bar value={value} max={100} />
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="metric-grid">
+        <Metric label="Contest" value={`${territory.contestLevel.toFixed(0)}/100`} tone={territory.contestLevel >= 55 ? 'danger' : territory.contestLevel >= 30 ? 'warn' : 'neutral'} />
+        <Metric label="Fortification" value={`${territory.fortification.toFixed(0)}/100`} />
+        <Metric label="Resource mass" value={resourceTotal.toFixed(0)} tone="good" />
+        <Metric label="Claims" value={claimants.length.toString()} tone={claimants.length > 1 ? 'warn' : 'neutral'} />
+      </div>
+
+      {recent && (
+        <div className="frontier-recent">
+          <Pickaxe size={14} />
+          <p><strong>{recent.title}</strong><span>{recent.summary}</span></p>
+          <b>flow {recent.turn}</b>
+        </div>
+      )}
+    </article>
+  );
+}
+
+function FrontierPanel({ world }: { world: WorldState }) {
+  return (
+    <section className="detail-section frontier-section">
+      <h3><FlagTriangleRight size={16} /> Free frontier land</h3>
+      <p className="frontier-summary">
+        Neutral territories are live land cells any nation can claim, patrol, or contest. Resources affect industry, water security, gold reserves, and future settlement pressure.
+      </p>
+      <div className="frontier-grid">
+        {world.neutralTerritories.map((territory) => <FrontierCard key={territory.id} territory={territory} world={world} />)}
+      </div>
+    </section>
+  );
+}
+
 export function ConflictPanel({ world }: { world: WorldState }) {
   return (
     <div className="panel-scroll">
@@ -101,6 +210,7 @@ export function ConflictPanel({ world }: { world: WorldState }) {
           </section>
         );
       })}
+      <FrontierPanel world={world} />
       <section className="detail-section">
         <h3>Diplomatic matrix</h3>
         {world.relations.map((relation) => {
