@@ -11,6 +11,7 @@ import {
   createInitialWorld,
   pulseWorld,
   providerStatuses,
+  recomputeWorld,
   stepWorldWithProviders,
   validateGoldConservation
 } from './world';
@@ -176,7 +177,7 @@ async function loadWorld(): Promise<WorldState> {
     const raw = await readFile(worldPath, 'utf8');
     const restored = JSON.parse(raw) as WorldState;
     restored.running = false;
-    return restored;
+    return recomputeWorld(restored);
   }
   return createInitialWorld();
 }

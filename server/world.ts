@@ -21,7 +21,9 @@ import type {
   ProviderId,
   ProviderStatus,
   RelationState,
+  ResourceState,
   SimulationMode,
+  SettlementState,
   Vec2,
   WarState,
   WorldState
@@ -207,10 +209,125 @@ function economy(index: number, population: number): EconomyState {
   };
 }
 
+function resourceStockpile(index: number): ResourceState {
+  const preset = index % 4;
+  return {
+    trees: [420, 310, 500, 360][preset],
+    stone: [390, 520, 340, 470][preset],
+    sand: [260, 430, 250, 310][preset],
+    water: [510, 360, 560, 430][preset],
+    gold: [64, 82, 58, 73][preset]
+  };
+}
+
+function emptyResources(): ResourceState {
+  return { trees: 0, stone: 0, sand: 0, water: 0, gold: 0 };
+}
+
+function addResources(a: ResourceState, b: ResourceState, scale = 1): ResourceState {
+  return {
+    trees: round(a.trees + b.trees * scale),
+    stone: round(a.stone + b.stone * scale),
+    sand: round(a.sand + b.sand * scale),
+    water: round(a.water + b.water * scale),
+    gold: round(a.gold + b.gold * scale)
+  };
+}
+
+function settlementPoint(area: NationState['territory'], index: number, salt: number): Vec2 {
+  if (index === 0) return { ...area.capital };
+  const xs = area.polygon.map((point) => point.x);
+  const zs = area.polygon.map((point) => point.z);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minZ = Math.min(...zs);
+  const maxZ = Math.max(...zs);
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    const seed = salt * 29 + index * 37 + attempt * 11;
+    const point = {
+      x: round(minX + (((Math.sin(seed) + 1) / 2) * 0.74 + 0.13) * (maxX - minX)),
+      z: round(minZ + (((Math.cos(seed * 1.41) + 1) / 2) * 0.72 + 0.14) * (maxZ - minZ))
+    };
+    if (pointInPolygon(point, area.polygon)) return point;
+  }
+  return { x: round(area.capital.x + Math.sin(index + salt) * 2.4), z: round(area.capital.z + Math.cos(index * 1.7 + salt) * 2.1) };
+}
+
+function settlementResourceDemand(population: number, builtArea: number): ResourceState {
+  const millions = population / 1_000_000;
+  return {
+    trees: round(millions * 0.014 + builtArea * 0.03),
+    stone: round(millions * 0.02 + builtArea * 0.045),
+    sand: round(millions * 0.018 + builtArea * 0.04),
+    water: round(millions * 0.055 + builtArea * 0.025),
+    gold: round(millions * 0.0007)
+  };
+}
+
+function createSettlements(nationId: string, area: NationState['territory'], population: number, index: number): SettlementState[] {
+  const nameSets = [
+    ['Axiom Prime', 'North Ledger', 'Civic Harbor', 'Blueglass Works', 'Outer Forum'],
+    ['Vesper Gate', 'Sol Basin', 'Copper Ward', 'Dune Exchange', 'Southwatch'],
+    ['Lumen City', 'Greenhaven', 'Courtwater', 'Brightfield', 'Iron Orchard'],
+    ['Meridian Hall', 'Violet Quay', 'Federal Rise', 'Starling Vale', 'East Meridian']
+  ];
+  const names = nameSets[index % nameSets.length];
+  const kinds: SettlementState['kind'][] = ['capital', 'metro', 'industrial', 'agrarian', 'frontier'];
+  const shares = [0.31, 0.16, 0.12, 0.09, 0.07];
+  const urbanShare = 0.64;
+  return shares.map((share, settlementIndex) => {
+    const builtArea = [84, 58, 49, 38, 27][settlementIndex] + index * 2;
+    const settlementPopulation = Math.round(population * urbanShare * share);
+    return {
+      id: `${nationId}-settlement-${settlementIndex}`,
+      nationId,
+      name: names[settlementIndex],
+      kind: kinds[settlementIndex],
+      position: settlementPoint(area, settlementIndex, index + 19),
+      population: settlementPopulation,
+      builtArea,
+      infrastructure: clamp(78 - settlementIndex * 5 + index),
+      housing: clamp(74 - settlementIndex * 4 + index),
+      industry: clamp((settlementIndex === 2 ? 78 : 48 - settlementIndex * 2) + index),
+      services: clamp(72 - settlementIndex * 3 + index),
+      construction: clamp(34 + settlementIndex * 7 + index * 2),
+      resourceDemand: settlementResourceDemand(settlementPopulation, builtArea),
+      resourceStockpiles: addResources(emptyResources(), resourceStockpile(index), 0.08 + settlementIndex * 0.012),
+      foundedTurn: 0,
+      growthRate: 0
+    };
+  });
+}
+
+function ensureNationCivilization(nation: NationState, index: number) {
+  nation.resources ??= resourceStockpile(index);
+  nation.settlements ??= createSettlements(nation.id, nation.territory, nation.social.population, index);
+  for (const settlement of nation.settlements) {
+    settlement.nationId = nation.id;
+    settlement.resourceDemand ??= settlementResourceDemand(settlement.population, settlement.builtArea);
+    settlement.resourceStockpiles ??= emptyResources();
+    settlement.growthRate ??= 0;
+  }
+  rebalanceSettlementPopulation(nation);
+}
+
+function rebalanceSettlementPopulation(nation: NationState) {
+  if (!nation.settlements.length) return;
+  const urbanShare = clamp(0.52 + nation.social.infrastructure / 420 + nation.economy.productivity / 900, 0.54, 0.78);
+  const targetUrbanPopulation = Math.round(nation.social.population * urbanShare);
+  const currentUrbanPopulation = nation.settlements.reduce((sum, settlement) => sum + Math.max(0, settlement.population), 0);
+  const scale = currentUrbanPopulation > 0 ? targetUrbanPopulation / currentUrbanPopulation : 1 / nation.settlements.length;
+  for (const settlement of nation.settlements) {
+    settlement.population = Math.max(0, Math.round(currentUrbanPopulation > 0 ? settlement.population * scale : targetUrbanPopulation * scale));
+    settlement.resourceDemand = settlementResourceDemand(settlement.population, settlement.builtArea);
+  }
+}
+
 function createNation(index: number): NationState {
   const provider = PROVIDERS[index];
   const nationId = `nation-${['axiom', 'vesper', 'lumen', 'meridian'][index]}`;
   const population = [2_150_000_000, 2_050_000_000, 1_980_000_000, 1_920_000_000][index];
+  const territoryState = territory(index);
   const flags: Array<NationState['flag']> = [
     { pattern: 'cross', primary: '#0b3142', secondary: '#58c7ff', emblem: 'A' },
     { pattern: 'diagonal', primary: '#3a2617', secondary: '#ff9f45', emblem: 'V' },
@@ -234,7 +351,9 @@ function createNation(index: number): NationState {
       'Conflict powers require public consequence review and legislative oversight.'
     ],
     governmentForm: ['Council republic', 'Parliamentary union', 'Commonwealth assembly', 'Federal assembly'][index],
-    territory: territory(index),
+    territory: territoryState,
+    resources: resourceStockpile(index),
+    settlements: createSettlements(nationId, territoryState, population, index),
     institutions: institutions(nationId),
     economy: economy(index, population),
     social: {
@@ -528,7 +647,8 @@ function updateDelegate(
 }
 
 export function recomputeWorld(world: WorldState): WorldState {
-  for (const nation of world.nations) {
+  for (const [index, nation] of world.nations.entries()) {
+    ensureNationCivilization(nation, index);
     const fiatValue = nation.economy.fiat.moneySupply * nation.economy.fiat.exchangeRateToWorld;
     const goldValue = nation.economy.gold.treasuryReserves * world.market.goldPrice;
     nation.economy.gold.backingRatio = round((goldValue / Math.max(1, fiatValue)) * 100, 3);
@@ -652,6 +772,9 @@ export function applyScenario(world: WorldState, scenarioId: string): WorldState
     world.market.commodityIndex = 87;
   } else if (scenarioId === 'resource-shock') {
     for (const nation of world.nations) {
+      nation.resources.trees = round(Math.max(0, nation.resources.trees * 0.92));
+      nation.resources.water = round(Math.max(0, nation.resources.water * 0.88));
+      nation.resources.sand = round(Math.max(0, nation.resources.sand * 0.96));
       nation.economy.energySecurity = round(clamp(nation.economy.energySecurity - 14));
       nation.economy.foodSecurity = round(clamp(nation.economy.foodSecurity - 11));
       nation.social.environment = round(clamp(nation.social.environment - 6));
@@ -707,6 +830,7 @@ export function claimNeutralTerritory(world: WorldState, nationId: string, terri
   if (!territoryItem.controllingNationId && territoryItem.contestLevel >= 34) {
     territoryItem.controllingNationId = nationId;
     territoryItem.fortification = 8;
+    nation.resources = addResources(nation.resources, territoryItem.resources, 0.35);
     nation.economy.industrialCapacity = clamp(nation.economy.industrialCapacity + territoryItem.resources.stone / 35);
     nation.economy.energySecurity = clamp(nation.economy.energySecurity + territoryItem.resources.water / 40);
     nation.economy.gold.treasuryReserves = round(nation.economy.gold.treasuryReserves + territoryItem.resources.gold * 0.08);
@@ -898,6 +1022,14 @@ function applyAction(world: WorldState, delegate: DelegateState, action: AgentAc
     nation.economy.fiat.publicDebt = round(nation.economy.fiat.publicDebt + spend * 0.55);
     nation.economy.fiat.treasuryCash = round(Math.max(0, nation.economy.fiat.treasuryCash - spend * 0.45));
     nation.social.approval = clamp(nation.social.approval + 2);
+    for (const settlement of nation.settlements) {
+      settlement.construction = round(clamp(settlement.construction + spend * 0.09));
+      settlement.infrastructure = round(clamp(settlement.infrastructure + spend * 0.025));
+      settlement.housing = round(clamp(settlement.housing + spend * 0.018));
+    }
+    nation.resources.stone = round(Math.max(0, nation.resources.stone - spend * 0.08));
+    nation.resources.sand = round(Math.max(0, nation.resources.sand - spend * 0.07));
+    nation.resources.trees = round(Math.max(0, nation.resources.trees - spend * 0.04));
     addDecision(world, delegate.id, 'fiscal_policy', 'Fiscal program approved', `${nation.name} funded ${spend}B WSU equivalent in public support.`, ['GDP and public debt rose.'], true, 'important');
   } else if (action.type === 'set_policy_rate') {
     nation.economy.fiat.policyRate = round(clamp(nation.economy.fiat.policyRate + (action.rate ?? 0.25), 0, 18));
@@ -998,6 +1130,62 @@ function drift(world: WorldState) {
   world.market.riskIndex = round(clamp(world.market.riskIndex + world.stats.activeWars * 0.4 - 0.12));
 }
 
+function evolveNationCivilization(nation: NationState, intensity = 1) {
+  const baseResourceLoad = nation.settlements.length * 280;
+  const stockpileStrength = (
+    nation.resources.trees * 0.18 +
+    nation.resources.stone * 0.3 +
+    nation.resources.sand * 0.22 +
+    nation.resources.water * 0.26 +
+    nation.resources.gold * 0.04
+  ) / Math.max(1, baseResourceLoad);
+  const resourceAdequacy = Math.max(0.35, Math.min(1.25, stockpileStrength));
+  let totalDemand = emptyResources();
+
+  for (const settlement of nation.settlements) {
+    const demand = settlementResourceDemand(settlement.population, settlement.builtArea);
+    totalDemand = addResources(totalDemand, demand);
+    const economicPressure =
+      nation.economy.annualGrowth * 0.06 +
+      nation.economy.industrialCapacity * 0.002 +
+      nation.social.infrastructure * 0.0015 -
+      nation.economy.unemployment * 0.015 -
+      nation.security.warWeariness * 0.012;
+    const constructionGain = (0.018 + economicPressure) * resourceAdequacy * intensity;
+    settlement.construction = round(clamp(settlement.construction + constructionGain * 10 - (resourceAdequacy < 0.7 ? 0.05 : 0)));
+    settlement.builtArea = round(clamp(settlement.builtArea + constructionGain * 0.5));
+    settlement.infrastructure = round(clamp(settlement.infrastructure + (nation.social.infrastructure - settlement.infrastructure) * 0.006 * intensity + constructionGain * 0.18));
+    settlement.housing = round(clamp(settlement.housing + (settlement.construction - settlement.housing) * 0.005 * intensity + resourceAdequacy * 0.015));
+    settlement.industry = round(clamp(settlement.industry + (nation.economy.industrialCapacity - settlement.industry) * 0.004 * intensity));
+    settlement.services = round(clamp(settlement.services + (nation.social.education - settlement.services) * 0.003 * intensity));
+    settlement.resourceDemand = demand;
+    settlement.resourceStockpiles = {
+      trees: round(Math.max(0, settlement.resourceStockpiles.trees + demand.trees * 0.004 * resourceAdequacy - demand.trees * 0.003)),
+      stone: round(Math.max(0, settlement.resourceStockpiles.stone + demand.stone * 0.004 * resourceAdequacy - demand.stone * 0.003)),
+      sand: round(Math.max(0, settlement.resourceStockpiles.sand + demand.sand * 0.004 * resourceAdequacy - demand.sand * 0.003)),
+      water: round(Math.max(0, settlement.resourceStockpiles.water + demand.water * 0.005 * resourceAdequacy - demand.water * 0.004)),
+      gold: round(Math.max(0, settlement.resourceStockpiles.gold + demand.gold * 0.002))
+    };
+    settlement.growthRate = round(
+      (nation.economy.foodSecurity - 70) * 0.002 +
+      (settlement.housing - 70) * 0.0015 +
+      (settlement.services - 70) * 0.0012 -
+      nation.security.warWeariness * 0.001 -
+      nation.social.displacement / Math.max(1, nation.social.population) * 8,
+      4
+    );
+  }
+
+  nation.resources = {
+    trees: round(Math.max(0, nation.resources.trees + nation.social.environment * 0.0009 * intensity - totalDemand.trees * 0.018 * intensity)),
+    stone: round(Math.max(0, nation.resources.stone - totalDemand.stone * 0.015 * intensity)),
+    sand: round(Math.max(0, nation.resources.sand - totalDemand.sand * 0.015 * intensity)),
+    water: round(Math.max(0, nation.resources.water + nation.economy.energySecurity * 0.0008 * intensity - totalDemand.water * 0.01 * intensity)),
+    gold: round(Math.max(0, nation.resources.gold - totalDemand.gold * 0.006 * intensity))
+  };
+  rebalanceSettlementPopulation(nation);
+}
+
 export function pulseWorld(world: WorldState, pulseIndex = world.turn + 1): WorldState {
   const focusDelegate = world.delegates[pulseIndex % Math.max(1, world.delegates.length)];
   for (const delegate of world.delegates) {
@@ -1029,6 +1217,7 @@ export function pulseWorld(world: WorldState, pulseIndex = world.turn + 1): Worl
     nation.social.approval = round(clamp(nation.social.approval + (nation.economy.foodSecurity - 75) * 0.001 + cycle * 0.025));
     nation.social.stability = round(clamp(nation.social.stability + (nation.social.approval - 65) * 0.002 - nation.security.warWeariness * 0.001));
     nation.social.infrastructure = round(clamp(nation.social.infrastructure - world.stats.activeWars * 0.005 + 0.002));
+    evolveNationCivilization(nation, 0.45);
   }
   for (const territoryItem of world.neutralTerritories) {
     const claimPressure = territoryItem.claimantNationIds.length * 0.04;

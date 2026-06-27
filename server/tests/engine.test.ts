@@ -40,6 +40,19 @@ test('initial fiat, gold, and world stats are populated', () => {
   assert.equal(world.nations.every((nation) => nation.economy.gold.backingRatio > 0), true);
 });
 
+test('initial nations have persistent settlements and resource stockpiles', () => {
+  const world = createInitialWorld();
+  for (const nation of world.nations) {
+    assert.equal(nation.settlements.length, 5);
+    assert.ok(nation.settlements.some((settlement) => settlement.kind === 'capital'));
+    assert.ok(nation.settlements.every((settlement) => settlement.population > 1_000_000));
+    assert.ok(nation.settlements.every((settlement) => settlement.resourceDemand.water > 0));
+    assert.ok(nation.resources.trees > 0);
+    assert.ok(nation.resources.stone > 0);
+    assert.ok(nation.resources.water > 0);
+  }
+});
+
 test('fiat issuance expands money and changes macro indicators without creating gold', () => {
   const world = createInitialWorld();
   const nation = world.nations[0];
@@ -119,11 +132,15 @@ test('ambient pulses move the world without creating audit events or gold', () =
   const eventBefore = world.turn;
   const gdpBefore = world.stats.gdp;
   const targetsBefore = world.delegates.map((delegate) => `${delegate.target.x}:${delegate.target.z}`).join('|');
+  const builtAreaBefore = world.nations[0].settlements[0].builtArea;
+  const resourceBefore = world.nations[0].resources.stone;
   pulseWorld(world, 11);
   assert.equal(world.turn, eventBefore);
   assert.equal(totalGold(world), 6400);
   assert.ok(world.stats.gdp > gdpBefore);
   assert.notEqual(world.delegates.map((delegate) => `${delegate.target.x}:${delegate.target.z}`).join('|'), targetsBefore);
+  assert.ok(world.nations[0].settlements[0].builtArea >= builtAreaBefore);
+  assert.notEqual(world.nations[0].resources.stone, resourceBefore);
 });
 
 test('live mode blocks missing provider credentials instead of faking a model action', async () => {

@@ -10,7 +10,7 @@ import { GltfHuman } from './GltfHuman';
 import { Humanoid } from './Humanoid';
 import { RealisticGlobe } from './RealisticGlobe';
 import { GLOBE_RADIUS, lonLatToVector, simulationPointToLonLat, simulationPointToVector, surfaceQuaternion } from '../lib/globe';
-import type { AnatomyMode, NeutralTerritoryState, OverlayMode, Vec2, WorldState } from '../lib/types';
+import type { AnatomyMode, NationState, NeutralTerritoryState, OverlayMode, SettlementState, Vec2, WorldState } from '../lib/types';
 
 type LonLat = [number, number];
 type PolygonCoordinates = LonLat[][];
@@ -301,32 +301,59 @@ function ResourceLayer({ world }: { world: WorldState }) {
   );
 }
 
+function fallbackSettlement(nation: NationState): SettlementState {
+  const empty = { trees: 0, stone: 0, sand: 0, water: 0, gold: 0 };
+  return {
+    id: `${nation.id}-capital-fallback`,
+    nationId: nation.id,
+    name: `${nation.name} Capital`,
+    kind: 'capital',
+    position: nation.territory.capital,
+    population: Math.round(nation.social.population * 0.34),
+    builtArea: 70,
+    infrastructure: nation.social.infrastructure,
+    housing: 72,
+    industry: nation.economy.industrialCapacity,
+    services: nation.social.education,
+    construction: 50,
+    resourceDemand: empty,
+    resourceStockpiles: empty,
+    foundedTurn: nation.foundedTurn,
+    growthRate: 0
+  };
+}
+
 function CityLayer({ world, selectedNationId }: { world: WorldState; selectedNationId: string }) {
   return (
     <>
       {world.nations.map((nation) => {
-        const position = simulationPointToVector(nation.territory.capital, 0.22);
         const selected = nation.id === selectedNationId;
-        const populationScale = Math.sqrt(nation.social.population / 2_000_000_000);
-        return (
-          <group key={`city-${nation.id}`} position={position} quaternion={surfaceQuaternion(position)} scale={populationScale * (selected ? 1.75 : 1)}>
-            {Array.from({ length: selected ? 28 : 10 }, (_, index) => {
-              const angle = (Math.PI * 2 * index) / 10;
-              const ring = selected ? Math.floor(index / 10) : 0;
-              const radius = 0.08 + (index % 3) * 0.04 + ring * 0.1;
-              return (
-                <mesh key={index} position={[Math.cos(angle) * radius, 0.08 + (index % 4) * 0.035, Math.sin(angle) * radius]} castShadow>
-                  <boxGeometry args={[0.035, 0.12 + (index % 4) * 0.06, 0.035]} />
-                  <meshStandardMaterial color="#dbe8ea" emissive={nation.color} emissiveIntensity={0.12} roughness={0.48} metalness={0.1} />
-                </mesh>
-              );
-            })}
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <ringGeometry args={[0.16, 0.26, 28]} />
-              <meshBasicMaterial color={nation.color} transparent opacity={0.36} side={THREE.DoubleSide} />
-            </mesh>
-          </group>
-        );
+        const settlements = nation.settlements?.length ? nation.settlements : [fallbackSettlement(nation)];
+        return settlements.slice(0, selected ? 5 : 2).map((settlement) => {
+          const position = simulationPointToVector(settlement.position, 0.22);
+          const populationScale = 0.45 + Math.sqrt(Math.max(1, settlement.population) / 520_000_000);
+          const buildingCount = Math.min(selected ? 28 : 12, Math.max(6, Math.round(settlement.builtArea / (selected ? 4 : 7))));
+          return (
+            <group key={`city-${settlement.id}`} position={position} quaternion={surfaceQuaternion(position)} scale={populationScale * (selected ? 1.05 : 0.78)}>
+              {Array.from({ length: buildingCount }, (_, index) => {
+                const angle = (Math.PI * 2 * index) / Math.max(1, buildingCount);
+                const ring = selected ? Math.floor(index / 9) : 0;
+                const radius = 0.06 + (index % 3) * 0.035 + ring * 0.08;
+                const height = 0.08 + (settlement.infrastructure / 100) * 0.08 + (index % 4) * 0.04 + (settlement.kind === 'capital' ? 0.04 : 0);
+                return (
+                  <mesh key={index} position={[Math.cos(angle) * radius, height / 2, Math.sin(angle) * radius]} castShadow>
+                    <boxGeometry args={[0.032, height, 0.032]} />
+                    <meshStandardMaterial color="#dbe8ea" emissive={nation.color} emissiveIntensity={0.12 + settlement.construction / 1200} roughness={0.48} metalness={0.1} />
+                  </mesh>
+                );
+              })}
+              <mesh rotation={[Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[0.13, 0.2 + settlement.builtArea / 420, 28]} />
+                <meshBasicMaterial color={nation.color} transparent opacity={selected ? 0.34 : 0.22} side={THREE.DoubleSide} />
+              </mesh>
+            </group>
+          );
+        });
       })}
     </>
   );
@@ -334,23 +361,25 @@ function CityLayer({ world, selectedNationId }: { world: WorldState; selectedNat
 
 function CivilizationLayer({ world, selectedNationId }: { world: WorldState; selectedNationId: string }) {
   const nation = world.nations.find((item) => item.id === selectedNationId) ?? world.nations[0];
-  const settlements = deterministicPoints(nation.territory.polygon, 18, 211);
+  const settlements = nation.settlements?.length ? nation.settlements : [fallbackSettlement(nation)];
   return (
     <>
-      {settlements.map((point, index) => {
-        const position = simulationPointToVector(point, 0.24);
-        const districtScale = 0.7 + (index % 5) * 0.08;
+      {settlements.map((settlement, index) => {
+        const position = simulationPointToVector(settlement.position, 0.24);
+        const districtScale = 0.72 + settlement.builtArea / 170 + index * 0.025;
+        const buildingCount = Math.min(10, Math.max(4, Math.round(settlement.builtArea / 11)));
         return (
-          <group key={`settlement-${nation.id}-${index}`} position={position} quaternion={surfaceQuaternion(position)} scale={districtScale}>
+          <group key={`settlement-${settlement.id}`} position={position} quaternion={surfaceQuaternion(position)} scale={districtScale}>
             <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <circleGeometry args={[0.08, 14]} />
-              <meshBasicMaterial color={nation.color} transparent opacity={0.28} side={THREE.DoubleSide} />
+              <circleGeometry args={[0.075 + settlement.housing / 1300, 18]} />
+              <meshBasicMaterial color={nation.color} transparent opacity={0.2 + settlement.construction / 500} side={THREE.DoubleSide} />
             </mesh>
-            {Array.from({ length: 4 + (index % 4) }, (_, building) => {
-              const angle = (building / 7) * Math.PI * 2;
+            {Array.from({ length: buildingCount }, (_, building) => {
+              const angle = (building / buildingCount) * Math.PI * 2;
+              const height = 0.055 + (settlement.services / 100) * 0.04 + (building % 3) * 0.025;
               return (
-                <mesh key={building} position={[Math.cos(angle) * 0.075, 0.045 + building * 0.006, Math.sin(angle) * 0.075]} castShadow>
-                  <boxGeometry args={[0.025, 0.07 + (building % 3) * 0.035, 0.025]} />
+                <mesh key={building} position={[Math.cos(angle) * 0.075, height / 2, Math.sin(angle) * 0.075]} castShadow>
+                  <boxGeometry args={[0.024, height, 0.024]} />
                   <meshStandardMaterial color={building % 2 ? '#f0f5f4' : nation.secondaryColor} emissive={nation.color} emissiveIntensity={0.08} roughness={0.52} />
                 </mesh>
               );
@@ -358,15 +387,15 @@ function CivilizationLayer({ world, selectedNationId }: { world: WorldState; sel
           </group>
         );
       })}
-      {deterministicPoints(nation.territory.polygon, 42, 257).map((point, index) => {
-        const position = simulationPointToVector(point, 0.29);
+      {settlements.flatMap((settlement, settlementIndex) => deterministicPoints([settlement.position], Math.min(18, Math.max(6, Math.round(settlement.population / 70_000_000))), 257 + settlementIndex).map((point, index) => {
+        const position = simulationPointToVector({ x: point.x + Math.sin(index * 1.7) * 0.42, z: point.z + Math.cos(index * 1.3) * 0.42 }, 0.29);
         return (
-          <mesh key={`selected-civilian-${index}`} position={position} quaternion={surfaceQuaternion(position)}>
+          <mesh key={`selected-civilian-${settlement.id}-${index}`} position={position} quaternion={surfaceQuaternion(position)}>
             <capsuleGeometry args={[0.014, 0.045, 4, 6]} />
             <meshStandardMaterial color={index % 3 === 0 ? nation.secondaryColor : '#f5e4c9'} emissive={nation.color} emissiveIntensity={0.08} roughness={0.68} />
           </mesh>
         );
-      })}
+      }))}
     </>
   );
 }

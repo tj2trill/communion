@@ -165,6 +165,27 @@ export interface ResourceState {
   gold: number;
 }
 
+export type SettlementKind = 'capital' | 'metro' | 'industrial' | 'agrarian' | 'frontier';
+
+export interface SettlementState {
+  id: string;
+  nationId: string;
+  name: string;
+  kind: SettlementKind;
+  position: Vec2;
+  population: number;
+  builtArea: number;
+  infrastructure: number;
+  housing: number;
+  industry: number;
+  services: number;
+  construction: number;
+  resourceDemand: ResourceState;
+  resourceStockpiles: ResourceState;
+  foundedTurn: number;
+  growthRate: number;
+}
+
 export interface NeutralTerritoryState {
   id: string;
   name: string;
@@ -199,6 +220,8 @@ export interface NationState {
   constitution: string[];
   governmentForm: string;
   territory: TerritoryState;
+  resources: ResourceState;
+  settlements: SettlementState[];
   institutions: InstitutionState[];
   economy: EconomyState;
   social: SocialState;

@@ -16,6 +16,7 @@ The application combines a live 3D globe dashboard with a stateful simulation se
 - Educational, non-gory anatomy views: exterior, skeleton, organs, and translucent X-ray.
 - Political, economic-growth, gold, diplomacy, and conflict overlays.
 - Capital skylines, detailed terrain resources, civilian population markers, territorial labels, relationship arcs, conflict indicators, and live camera controls that zoom into a selected country.
+- Persistent settlements for each nation, including capital, metro, industrial, agrarian, and frontier districts with population, construction, housing, industry, services, infrastructure, and resource demand.
 
 ### Multi-model deliberation
 
@@ -48,6 +49,7 @@ Institutions have distinct influence, legitimacy, wealth share, coercive capacit
 - Central-bank money issuance, interest-rate changes, fiscal policy, gold purchases and sales, currency swaps, sanctions, reserve freezes, and humanitarian transfers.
 - Trade settlement in fiat, gold, or a mixed form.
 - Global gold price, reserve availability, inflation, commodity prices, food and energy prices, trade volume, and financial-risk indices.
+- National stockpiles of trees, stone, sand, water, and ore-like gold resources that feed settlement construction and respond to shocks or frontier claims.
 - Currency-crisis, gold-rush, and market-crash scenarios.
 
 ### Diplomacy, countries, and conflict
