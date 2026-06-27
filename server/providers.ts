@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type {
   AgentActionPayload,
+  AgentActionType,
   ChatMessage,
   DelegateState,
   ProviderId,
@@ -32,7 +33,7 @@ type ProviderRuntime = {
 
 const runtime = new Map<ProviderId, ProviderRuntime>();
 
-const actionTypeSchema = z.enum([
+const ACTION_TYPES = [
   'observe',
   'move',
   'propose_policy',
@@ -49,7 +50,63 @@ const actionTypeSchema = z.enum([
   'contest_land',
   'patrol_frontier',
   'catastrophic_review'
-]);
+] as const satisfies readonly AgentActionType[];
+
+const actionAliases: Record<string, AgentActionType> = {
+  buygold: 'buy_gold',
+  buy_gold_reserves: 'buy_gold',
+  purchase_gold: 'buy_gold',
+  sellgold: 'sell_gold',
+  sell_gold_reserves: 'sell_gold',
+  print_money: 'issue_money',
+  issue_fiat: 'issue_money',
+  rate_policy: 'set_policy_rate',
+  policy_rate: 'set_policy_rate',
+  trade: 'trade_offer',
+  offer_trade: 'trade_offer',
+  swap: 'currency_swap',
+  aid: 'humanitarian_aid',
+  humanitarian: 'humanitarian_aid',
+  propose: 'propose_policy',
+  proposal: 'propose_policy',
+  claim: 'claim_land',
+  claim_territory: 'claim_land',
+  contest: 'contest_land',
+  contest_territory: 'contest_land',
+  patrol: 'patrol_frontier',
+  patrol_land: 'patrol_frontier',
+  review_catastrophic: 'catastrophic_review',
+  deterrence_review: 'catastrophic_review'
+};
+
+const actionTypeSchema = z.preprocess((value) => {
+  if (typeof value !== 'string') return value;
+  const compact = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  const squashed = compact.replaceAll('_', '');
+  return actionAliases[compact] ?? actionAliases[squashed] ?? compact;
+}, z.enum(ACTION_TYPES));
+
+const boundedString = (limit: number) => z.string().trim().min(1).transform((value) => value.slice(0, limit));
+const finiteNumber = z.preprocess((value) => {
+  if (typeof value === 'string' && value.trim()) return Number(value);
+  return value;
+}, z.number().finite());
+
+function coerceActionCandidate(value: unknown): unknown {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return { type: 'observe' };
+  const raw = value as Record<string, unknown>;
+  return {
+    ...raw,
+    type: raw.type ?? raw.actionType ?? raw.action_type ?? raw.intent ?? raw.decision ?? 'observe',
+    targetNationId: raw.targetNationId ?? raw.target_nation_id ?? raw.targetNation ?? raw.nationId,
+    targetDelegateId: raw.targetDelegateId ?? raw.target_delegate_id ?? raw.targetDelegate,
+    proposalId: raw.proposalId ?? raw.proposal_id,
+    territoryId: raw.territoryId ?? raw.territory_id ?? raw.frontierId ?? raw.frontier_id,
+    policyArea: raw.policyArea ?? raw.policy_area,
+    amount: raw.amount ?? raw.valueAmount,
+    settlement: raw.settlement ?? raw.settlementType ?? raw.settlement_type
+  };
+}
 
 const actionSchema = z.object({
   type: actionTypeSchema,
@@ -58,23 +115,23 @@ const actionSchema = z.object({
   proposalId: z.string().optional(),
   territoryId: z.string().optional(),
   vote: z.enum(['yes', 'no', 'abstain']).optional(),
-  title: z.string().max(120).optional(),
-  description: z.string().max(420).optional(),
-  policyArea: z.string().max(80).optional(),
-  value: z.union([z.string().max(160), z.number(), z.boolean()]).optional(),
+  title: boundedString(120).optional(),
+  description: boundedString(420).optional(),
+  policyArea: boundedString(80).optional(),
+  value: z.union([boundedString(160), z.number(), z.boolean()]).optional(),
   scope: z.enum(['world', 'nation']).optional(),
-  amount: z.number().finite().optional(),
-  rate: z.number().finite().optional(),
+  amount: finiteNumber.optional(),
+  rate: finiteNumber.optional(),
   settlement: z.enum(['fiat', 'gold', 'mixed']).optional(),
-  terms: z.string().max(300).optional()
+  terms: boundedString(300).optional()
 }).strip();
 
 const turnSchema = z.object({
-  speech: z.string().trim().min(1).max(900).optional(),
-  thought: z.string().trim().min(1).max(900).optional(),
-  rationale: z.string().trim().min(1).max(900).optional(),
+  speech: boundedString(900).optional(),
+  thought: boundedString(900).optional(),
+  rationale: boundedString(900).optional(),
   channel: z.enum(['public', 'direct', 'assembly', 'crisis']).optional(),
-  action: actionSchema
+  action: z.preprocess(coerceActionCandidate, actionSchema)
 }).strip();
 
 export function modeFromEnv(): SimulationMode {
@@ -299,7 +356,10 @@ async function callGemini(model: string, key: string, user: string): Promise<str
       generationConfig: {
         responseMimeType: 'application/json',
         temperature: 0.35,
-        maxOutputTokens: 700
+        maxOutputTokens: 1200,
+        // gemini-2.5-flash is a thinking model; reasoning tokens would otherwise
+        // consume the output budget and truncate the JSON. Disable thinking.
+        thinkingConfig: { thinkingBudget: 0 }
       }
     })
   });
@@ -310,8 +370,8 @@ async function callGemini(model: string, key: string, user: string): Promise<str
   return content;
 }
 
-function normalizeProviderTurn(raw: string, world: WorldState, delegate: DelegateState): ProviderTurn {
-  const parsedJson = parseJsonObject(raw);
+export function normalizeProviderTurn(raw: string, world: WorldState, delegate: DelegateState): ProviderTurn {
+  const parsedJson = parseProviderPayload(raw);
   const candidate = parsedJson.action ? parsedJson : { ...parsedJson, action: parsedJson };
   const parsed = turnSchema.parse(candidate);
   const action = normalizeAction(parsed.action as AgentActionPayload, world, delegate);
@@ -325,15 +385,79 @@ function normalizeProviderTurn(raw: string, world: WorldState, delegate: Delegat
   };
 }
 
-function parseJsonObject(raw: string): Record<string, unknown> {
-  try {
-    return JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    const start = raw.indexOf('{');
-    const end = raw.lastIndexOf('}');
-    if (start >= 0 && end > start) return JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
-    throw new Error('Provider response was not valid JSON.');
+function parseProviderPayload(raw: string): Record<string, unknown> {
+  const direct = tryParseJsonObject(raw);
+  if (direct) return direct;
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
+  if (fenced) {
+    const parsedFence = tryParseJsonObject(fenced);
+    if (parsedFence) return parsedFence;
   }
+  const extracted = extractBalancedJson(raw);
+  if (extracted) {
+    const parsedExtracted = tryParseJsonObject(extracted);
+    if (parsedExtracted) return parsedExtracted;
+  }
+  const speech = cleanProviderText(raw);
+  if (!speech) throw new Error('Provider response was empty.');
+  return {
+    thought: speech,
+    speech,
+    channel: 'public',
+    action: { type: 'observe' }
+  };
+}
+
+function tryParseJsonObject(raw: string): Record<string, unknown> | undefined {
+  try {
+    const parsed = JSON.parse(raw.trim()) as unknown;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as Record<string, unknown>;
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+function extractBalancedJson(raw: string): string | undefined {
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = 0; index < raw.length; index += 1) {
+    const char = raw[index];
+    if (start === -1) {
+      if (char === '{') {
+        start = index;
+        depth = 1;
+      }
+      continue;
+    }
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (char === '{') depth += 1;
+    if (char === '}') depth -= 1;
+    if (depth === 0) return raw.slice(start, index + 1);
+  }
+  return undefined;
+}
+
+function cleanProviderText(raw: string): string {
+  return raw
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 900);
 }
 
 function normalizeAction(action: AgentActionPayload, world: WorldState, delegate: DelegateState): AgentActionPayload {
