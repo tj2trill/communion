@@ -77,7 +77,9 @@ Additions:
 - `AgentActionType` gains `'build_road' | 'build_rail' | 'build_port' |
   'build_airport'`.
 - `AgentActionPayload` gains optional `fromSettlementId?`, `toSettlementId?`,
-  `transportKind?: TransportKind`.
+  `transportKind?: TransportKind`. Note: a pre-existing unrelated field
+  `settlement: 'fiat' | 'gold' | 'mixed'` already exists on the payload; the new
+  `*SettlementId` fields are distinct and must not be conflated with it.
 
 All new fields are optional-tolerant on load: `normalize`-style code defaults
 them so existing persisted state and provider JSON keep validating (per
@@ -85,8 +87,9 @@ CLAUDE.md: provider output is untrusted and must not break on missing fields).
 
 ### 3.3 Routing module (`server/routing.ts`, new)
 
-- Graph nodes = settlements (across all nations + frontier hubs). Edges = links
-  with `built === true`.
+- Graph nodes = settlements (across all nations; "frontier hubs" are simply
+  settlements of `kind === 'frontier'`, not a separate node concept). Edges =
+  links with `built === true`.
 - `findRoute(fromId, toId, links): { legs: TransportLink[] } | null` — BFS by
   fewest legs, deterministic tie-break by link id. Returns null when no built
   path exists.
@@ -99,6 +102,10 @@ CLAUDE.md: provider output is untrusted and must not break on missing fields).
   settlement pairs whose corridor `segmentOnLand` is true (waypoints = straight
   land segment, subdivided). Mark `built: true` for these starter roads so the
   world is not frozen on first load. Compute `isCoastal` / `hasPort` etc.
+  Intended initial behavior: water-separated nation pairs get **no** auto starter
+  `sea`/`air` link — inter-nation/over-water travel requires an agent to build a
+  port (then a sea lane) or an airport first. The slice-1 blocked-cohort test
+  depends on this; it is intended, not a bug.
 - Replace the straight-line cohort interpolation (`retargetCivilianCohort` /
   `pointBetween` usage around `world.ts:1261`) with link-following movement:
   - When a cohort needs to travel from A to B, call `findRoute`.
@@ -132,8 +139,9 @@ CLAUDE.md: provider output is untrusted and must not break on missing fields).
   land/lanes — there is no diagonal free-floating movement. (City-grid
   non-diagonal movement is handled in Slice 3.)
 - Thought bubbles: render an `Html` bubble above each delegate showing
-  `delegate.currentThought` (truncated), and above active cohorts a short
-  purpose label. Bubbles billboard toward the camera and fade with distance.
+  `delegate.currentThought` (truncated), and above active cohorts a short label
+  derived from the existing `CivilianCohortState.purpose`. Bubbles billboard
+  toward the camera and fade with distance.
 
 ### 3.6 Models
 
@@ -169,7 +177,10 @@ A single source-of-truth cost table (`server/build-costs.ts`, new), e.g.:
 | building    | yes   | yes   | yes   |      |      |
 
 (Exact numeric amounts decided in the implementation plan; the table is the
-contract.) Costs scale with link length / settlement size.
+contract.) Costs scale with link length / settlement size. The plan must pin a
+single explicit scaling formula (e.g. `cost = base * (1 + lengthUnits * k)` for
+links and `cost = base * (1 + builtArea/100)` for settlement builds) so the
+curve is unambiguous and deterministic.
 
 ### 4.2 Engine
 
