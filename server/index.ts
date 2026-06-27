@@ -1,4 +1,6 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+// override:true so .env wins over any stale shell vars (e.g. an exported COMMUNION_MODE=mock).
+dotenv.config({ override: true });
 import express, { type Request, type Response } from 'express';
 import { appendFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
