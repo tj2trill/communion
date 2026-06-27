@@ -1,5 +1,5 @@
 import { Html, Line, MapControls } from '@react-three/drei';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import populatedPlacesData from '../data/ne_110m_populated_places.json';
@@ -28,16 +28,18 @@ function CameraRig({ world, selectedNationId }: Pick<WorldSceneProps, 'world' | 
   const { camera, controls } = useThree();
   const selected = world.nations.find((nation) => nation.id === selectedNationId) ?? world.nations[0];
   const focus = useMemo(() => simulationPointToVector(selected.territory.capital, 0.3), [selected.territory.capital]);
-  useEffect(() => {
-    const direction = focus.clone().normalize();
-    camera.position.copy(direction.multiplyScalar(14.2).add(new THREE.Vector3(0, 2.1, 0)));
-    camera.lookAt(focus);
+  // Smoothly fly the camera in close to the selected nation so its cities and
+  // delegates become visible (zoom-to-country drilldown).
+  const desired = useMemo(() => focus.clone().normalize().multiplyScalar(GLOBE_RADIUS + 3.2), [focus]);
+  useFrame((_, delta) => {
+    const k = Math.min(1, delta * 1.8);
+    camera.position.lerp(desired, k);
     const mapControls = controls as { target?: THREE.Vector3; update?: () => void } | undefined;
     if (mapControls?.target) {
-      mapControls.target.copy(focus);
+      mapControls.target.lerp(focus, k);
       mapControls.update?.();
     }
-  }, [camera, controls, focus]);
+  });
   return null;
 }
 
@@ -366,7 +368,7 @@ function SceneContent({ world, anatomyMode, overlay, selectedNationId, onSelectN
         makeDefault
         enableDamping
         dampingFactor={0.08}
-        minDistance={10}
+        minDistance={8.7}
         maxDistance={28}
         minPolarAngle={0.18}
         maxPolarAngle={Math.PI - 0.18}
