@@ -183,9 +183,13 @@ export async function callModelProvider(world: WorldState, delegate: DelegateSta
   if (!key) throw new Error(`No ${apiKeyName(delegate.provider)} is configured.`);
   const model = envModel(delegate.provider, spec.model);
   const prompt = buildPrompt(world, delegate);
-  const raw = delegate.provider === 'anthropic'
+  // Use each provider's native API, but allow a slot to be pointed at an
+  // OpenAI-compatible host (Groq/OpenRouter) by overriding its *_BASE_URL.
+  const useNativeAnthropic = delegate.provider === 'anthropic' && baseUrlFor('anthropic').includes('anthropic.com');
+  const useNativeGoogle = delegate.provider === 'google' && baseUrlFor('google').includes('googleapis.com');
+  const raw = useNativeAnthropic
     ? await callAnthropic(model, key, prompt.system, prompt.user)
-    : delegate.provider === 'google'
+    : useNativeGoogle
       ? await callGemini(model, key, prompt.user)
       : await callOpenAICompatible(delegate.provider, model, key, prompt.system, prompt.user);
   return normalizeProviderTurn(raw, world, delegate);
