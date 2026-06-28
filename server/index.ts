@@ -139,41 +139,53 @@ if (await exists(distDir)) {
   });
 }
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Communion server listening on http://localhost:${port}`);
+  startSimulationLoop();
+});
+
+server.on('error', (reason: NodeJS.ErrnoException) => {
+  const detail = reason.code === 'EADDRINUSE'
+    ? `Port ${port} is already in use. Refusing to run a headless simulation loop.`
+    : reason.message;
+  console.error(`Communion server failed to start: ${detail}`);
+  process.exitCode = 1;
+  process.exit(1);
 });
 
 let flowInFlight = false;
 
-setInterval(() => {
-  if (!world.running) return;
-  pulseCounter += 1;
-  world = pulseWorld(world, pulseCounter);
-  broadcast(world);
-  if (persistState && pulseCounter % 4 === 0) {
-    void persistSnapshot();
-  }
-  tickCounter += world.speed;
-  if (tickCounter < 1) return;
-  if (flowInFlight) return;
-  tickCounter = Math.max(0, tickCounter - 1);
-  flowInFlight = true;
-  void (async () => {
-    const epochAtStart = worldEpoch;
-    try {
-      const nextWorld = await stepWorldWithProviders(world);
-      if (epochAtStart !== worldEpoch) return;
-      world = nextWorld;
-      await afterMutation('flow');
-    } catch (reason) {
-      world.running = false;
-      await audit(`flow-error:${reason instanceof Error ? reason.message : String(reason)}`);
-      broadcast(world);
-    } finally {
-      flowInFlight = false;
+function startSimulationLoop() {
+  setInterval(() => {
+    if (!world.running) return;
+    pulseCounter += 1;
+    world = pulseWorld(world, pulseCounter);
+    broadcast(world);
+    if (persistState && pulseCounter % 4 === 0) {
+      void persistSnapshot();
     }
-  })();
-}, tickMs);
+    tickCounter += world.speed;
+    if (tickCounter < 1) return;
+    if (flowInFlight) return;
+    tickCounter = Math.max(0, tickCounter - 1);
+    flowInFlight = true;
+    void (async () => {
+      const epochAtStart = worldEpoch;
+      try {
+        const nextWorld = await stepWorldWithProviders(world);
+        if (epochAtStart !== worldEpoch) return;
+        world = nextWorld;
+        await afterMutation('flow');
+      } catch (reason) {
+        world.running = false;
+        await audit(`flow-error:${reason instanceof Error ? reason.message : String(reason)}`);
+        broadcast(world);
+      } finally {
+        flowInFlight = false;
+      }
+    })();
+  }, tickMs);
+}
 
 async function loadWorld(): Promise<WorldState> {
   if (restoreState && await exists(worldPath)) {
